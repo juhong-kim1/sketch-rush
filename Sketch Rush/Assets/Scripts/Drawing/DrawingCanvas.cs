@@ -104,6 +104,7 @@ public class DrawingCanvas : MonoBehaviour
     void StopDrawing()
     {
         isDrawing = false;
+        texture.Apply(); // 마지막에 한 번 더 (안전)
     }
 
     Vector2 GetLocalPosition(Vector2 screenPosition)
@@ -133,7 +134,8 @@ public class DrawingCanvas : MonoBehaviour
                localPos.y >= 0 && localPos.y < textureHeight;
     }
 
-    void DrawPoint(Vector2 position)
+    // Apply 없는 버전 추가
+    void DrawPointWithoutApply(Vector2 position)
     {
         int x = (int)position.x;
         int y = (int)position.y;
@@ -154,7 +156,11 @@ public class DrawingCanvas : MonoBehaviour
                 }
             }
         }
+    }
 
+    void DrawPoint(Vector2 position)
+    {
+        DrawPointWithoutApply(position);
         texture.Apply();
     }
 
@@ -167,8 +173,10 @@ public class DrawingCanvas : MonoBehaviour
         {
             float t = i / (float)steps;
             Vector2 point = Vector2.Lerp(start, end, t);
-            DrawPoint(point);
+            DrawPointWithoutApply(point); // Apply 안 함!
         }
+
+        texture.Apply(); // 한 번만!
     }
 
     public void SetColor(Color color)

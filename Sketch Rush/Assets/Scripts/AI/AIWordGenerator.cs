@@ -6,11 +6,14 @@ using System.Collections.Generic;
 
 public class AIWordGenerator : MonoBehaviour
 {
+    [Header("API Selection")]
+    [SerializeField] private bool useOpenAI = true;
+    
     private string apiKey;
-    private string apiUrl = "https://api.anthropic.com/v1/messages";
+    private string apiUrl;
     private APIConfig config;
 
-    private List<string> usedWords = new List<string>();
+    private static List<string> usedWords = new List<string>();
 
     public string[] generatedWords { get; private set; }
 
@@ -20,71 +23,115 @@ public class AIWordGenerator : MonoBehaviour
 
         if (config != null)
         {
-            apiKey = config.ClaudeApiKey;
-            Debug.Log("[AIWordGenerator] API Å° ·Îµå ¼º°ø!");
+            if (useOpenAI)
+            {
+                apiKey = config.OpenAIApiKey;
+                apiUrl = "https://api.openai.com/v1/chat/completions";
+                Debug.Log("[AIWordGenerator] OpenAI API ì‚¬ìš©");
+            }
+            else
+            {
+                apiKey = config.ClaudeApiKey;
+                apiUrl = "https://api.anthropic.com/v1/messages";
+                Debug.Log("[AIWordGenerator] Claude API ì‚¬ìš©");
+            }
+            
+            Debug.Log("[AIWordGenerator] API í‚¤ ë¡œë“œ ì„±ê³µ!");
         }
         else
         {
-            Debug.LogError("[AIWordGenerator] APIConfig¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
+            Debug.LogError("[AIWordGenerator] APIConfigë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
         }
     }
 
     void Start()
+{
+    if (!string.IsNullOrEmpty(apiKey))
     {
-        if (!string.IsNullOrEmpty(apiKey))
-        {
-            GenerateWords();
-        }
+        StartCoroutine(GenerateWords());
     }
+}
 
-    public void GenerateWords()
+    public IEnumerator GenerateWords()
     {
-        StartCoroutine(RequestWords());
+        yield return StartCoroutine(RequestWords());
     }
 
     IEnumerator RequestWords()
     {
-        Debug.Log("[AIWordGenerator] AI¿¡°Ô ´Ü¾î ¿äÃ» Áß...");
+        Debug.Log("[AIWordGenerator] AIì—ê²Œ ë‹¨ì–´ ìš”ì²­ ì¤‘...");
 
         string timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         int randomSeed = Random.Range(1000, 9999);
-        string excludedWords = usedWords.Count > 0 ? string.Join(", ", usedWords) : "¾øÀ½";
+        string excludedWords = usedWords.Count > 0 
+            ? string.Join(", ", usedWords) 
+            : "ì—†ìŒ";
 
-        string prompt = string.Format(@"±×¸²À¸·Î Ç¥ÇöÇÏ±â ÁÁÀº ÇÑ±¹¾î ¸í»ç 20°³¸¦ »ı¼ºÇØÁà.
+        string prompt = string.Format(@"ê·¸ë¦¼ìœ¼ë¡œ í‘œí˜„í•˜ê¸° ì¢‹ì€ ëª…ì‚¬ 20ê°œë¥¼ í•œêµ­ì–´ë¡œ ìƒì„±í•´ì¤˜.
 
-Àı´ë »ç¿ë ±İÁö (ÀÌ¹Ì ³ª¿Â ´Ü¾î):
+ì ˆëŒ€ ì‚¬ìš© ê¸ˆì§€ (ì´ë¯¸ ë‚˜ì˜¨ ë‹¨ì–´):
 {2}
 
-·£´ı ½Ãµå: {0}
-½Ã°¢: {1}
+ëœë¤ ì‹œë“œ: {0}
+ì‹œê°: {1}
 
-À§ ±İÁö ´Ü¾î¿Í ¿ÏÀüÈ÷ ´Ù¸¥ »õ·Î¿î ´Ü¾î¸¸!
-ÀüÅëÀûÀÎ ´Ü¾îº¸´Ù Çö´ëÀûÀÌ°í ÀÏ»óÀûÀÎ ´Ü¾î ¿ì¼±
-°ÇÃà¹°, ÀÚ¿¬, µµ±¸, Å»°Í, ½Ä¹°, µ¿¹°, À½½Ä, ÀÇ·ù, ½ºÆ÷Ã÷, °¡±¸ µî ´Ù¾çÇÑ ºĞ¾ß¿¡¼­ ÀÚÀ¯·Ó°Ô ¼±ÅÃ.
+ìœ„ ê¸ˆì§€ ë‹¨ì–´ì™€ ì™„ì „íˆ ë‹¤ë¥¸ ìƒˆë¡œìš´ ë‹¨ì–´ë§Œ!
+ê±´ì¶•ë¬¼, ìì—°, ë„êµ¬, íƒˆê²ƒ, ì‹ë¬¼, ë™ë¬¼, ìŒì‹, ì˜ë¥˜, ìŠ¤í¬ì¸ , ê°€êµ¬, ì „ìì œí’ˆ, ìƒí™œìš©í’ˆ ë“± ë‹¤ì–‘í•œ ë¶„ì•¼ì—ì„œ ììœ ë¡­ê²Œ ì„ íƒ.
 
-³­ÀÌµµ: Áß°£
-- ±×¸± ¼ö ÀÖÁö¸¸ ¹Ù·Î ¶°¿Ã¸®±â ¾î·Á¿î ¼öÁØ
+ì˜ˆì‹œ:
+ì¢‹ì€ ì˜ˆ: í—¬ë¦¬ì½¥í„°, ì„ ì¸ì¥, ì¹´ë©”ë¼, íŠ¸ëŸ­, í”¼ì, ê¸°íƒ€, ë†êµ¬ê³µ
+ë‚˜ìœ ì˜ˆ: ë‚˜ë§‰ì‹ , ì†ŸëŒ€, ë² í‹€ ê°™ì€ ì „í†µ ë‹¨ì–´ëŠ” í”¼í•  ê²ƒ
 
-Á¶°Ç:
-- 2~4À½Àı ¸í»ç
-- ±¸Ã¼ÀûÀ¸·Î ±×¸± ¼ö ÀÖ´Â °Í
-- Ãß»ó¸í»ç Á¦¿Ü
+ë‚œì´ë„: ì¤‘ê°„
+- ê·¸ë¦´ ìˆ˜ ìˆì§€ë§Œ ë°”ë¡œ ë– ì˜¬ë¦¬ê¸° ì–´ë ¤ìš´ ìˆ˜ì¤€
+- ë„ˆë¬´ í”í•œ ë‹¨ì–´ ì œì™¸
 
-JSON Çü½Ä:
-{{""words"": [""´Ü¾î1"", ""´Ü¾î2"", ..., ""´Ü¾î20""]}}",
+ì¡°ê±´:
+- 2~4ìŒì ˆ ëª…ì‚¬
+- êµ¬ì²´ì ìœ¼ë¡œ ê·¸ë¦´ ìˆ˜ ìˆëŠ” ê²ƒ
+- ì¶”ìƒëª…ì‚¬ ì œì™¸
+- í˜„ëŒ€ì ì´ê³  ì¼ìƒì ì¸ ë‹¨ì–´
+
+JSON í˜•ì‹:
+{{""words"": [""ë‹¨ì–´1"", ""ë‹¨ì–´2"", ..., ""ë‹¨ì–´20""]}}",
             randomSeed, timestamp, excludedWords);
 
-        string requestJson = $@"{{
-            ""model"": ""claude-sonnet-4-20250514"",
-            ""max_tokens"": 1024,
-            ""temperature"": 1.0,
-            ""messages"": [
-                {{
-                    ""role"": ""user"",
-                    ""content"": {JsonEscape(prompt)}
-                }}
-            ]
-        }}";
+        string requestJson;
+        
+        if (useOpenAI)
+        {
+            // OpenAI ìš”ì²­ í˜•ì‹
+            requestJson = $@"{{
+                ""model"": ""gpt-4o-mini"",
+                ""temperature"": 1.8,
+                ""max_tokens"": 500,
+                ""messages"": [
+                    {{
+                        ""role"": ""system"",
+                        ""content"": ""You are a creative word generator for drawing games. Always respond in valid JSON format.""
+                    }},
+                    {{
+                        ""role"": ""user"",
+                        ""content"": {JsonEscape(prompt)}
+                    }}
+                ]
+            }}";
+        }
+        else
+        {
+            // Claude ìš”ì²­ í˜•ì‹
+            requestJson = $@"{{
+                ""model"": ""claude-sonnet-4-20250514"",
+                ""max_tokens"": 1024,
+                ""temperature"": 1.0,
+                ""messages"": [
+                    {{
+                        ""role"": ""user"",
+                        ""content"": {JsonEscape(prompt)}
+                    }}
+                ]
+            }}";
+        }
 
         UnityWebRequest request = new UnityWebRequest(apiUrl, "POST");
         byte[] bodyRaw = Encoding.UTF8.GetBytes(requestJson);
@@ -92,21 +139,28 @@ JSON Çü½Ä:
         request.downloadHandler = new DownloadHandlerBuffer();
 
         request.SetRequestHeader("Content-Type", "application/json");
-        request.SetRequestHeader("x-api-key", apiKey);
-        request.SetRequestHeader("anthropic-version", "2023-06-01");
+        
+        if (useOpenAI)
+        {
+            request.SetRequestHeader("Authorization", $"Bearer {apiKey}");
+        }
+        else
+        {
+            request.SetRequestHeader("x-api-key", apiKey);
+            request.SetRequestHeader("anthropic-version", "2023-06-01");
+        }
 
         yield return request.SendWebRequest();
 
         if (request.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log("[AIWordGenerator] AI ÀÀ´ä ¼º°ø!");
-
+            Debug.Log("[AIWordGenerator] AI ì‘ë‹µ ì„±ê³µ!");
             string responseText = request.downloadHandler.text;
             ParseWordsFromResponse(responseText);
         }
         else
         {
-            Debug.LogError($"[AIWordGenerator] AI ¿äÃ» ½ÇÆĞ: {request.error}");
+            Debug.LogError($"[AIWordGenerator] AI ìš”ì²­ ì‹¤íŒ¨: {request.error}");
             Debug.LogError(request.downloadHandler.text);
         }
     }
@@ -115,22 +169,51 @@ JSON Çü½Ä:
     {
         try
         {
-            int textStart = response.IndexOf("\"text\":\"") + 8;
-            int textEnd = response.IndexOf("\"}", textStart);
-            string textContent = response.Substring(textStart, textEnd - textStart);
+            string textContent;
+            
+            if (useOpenAI)
+            {
+                // OpenAI ì‘ë‹µ: choices[0].message.content
+                int contentStart = response.IndexOf("\"content\":\"") + 11;
+                int contentEnd = response.IndexOf("\"", contentStart);
+                
+                // ì´ìŠ¤ì¼€ì´í”„ëœ ë”°ì˜´í‘œ ì²˜ë¦¬
+                int depth = 0;
+                for (int i = contentStart; i < response.Length; i++)
+                {
+                    if (response[i] == '{') depth++;
+                    if (response[i] == '}') depth--;
+                    if (response[i] == '"' && i > 0 && response[i-1] != '\\' && depth == 0)
+                    {
+                        contentEnd = i;
+                        break;
+                    }
+                }
+                
+                textContent = response.Substring(contentStart, contentEnd - contentStart);
+            }
+            else
+            {
+                // Claude ì‘ë‹µ: content[0].text
+                int textStart = response.IndexOf("\"text\":\"") + 8;
+                int textEnd = response.IndexOf("\"}", textStart);
+                textContent = response.Substring(textStart, textEnd - textStart);
+            }
 
+            // ê³µí†µ ì²˜ë¦¬
             textContent = textContent.Replace("```json\\n", "")
-                                  .Replace("\\n```", "")
-                                  .Replace("\\n", "")
-                                  .Replace("\\r", "")
-                                  .Replace("  ", "")
-                                  .Replace("\\\"", "\"");
+                                     .Replace("\\n```", "")
+                                     .Replace("\\n", "")
+                                     .Replace("\\r", "")
+                                     .Replace("  ", "")
+                                     .Replace("\\\"", "\"");
 
-            Debug.Log("[AIWordGenerator] ÃßÃâµÈ JSON: " + textContent);
+            Debug.Log("[AIWordGenerator] ì¶”ì¶œëœ JSON: " + textContent);
 
             WordList wordList = JsonUtility.FromJson<WordList>(textContent);
             generatedWords = wordList.words;
 
+            // ì‚¬ìš©í•œ ë‹¨ì–´ ì €ì¥
             foreach (string word in generatedWords)
             {
                 if (!usedWords.Contains(word))
@@ -139,13 +222,13 @@ JSON Çü½Ä:
                 }
             }
 
-            Debug.Log($"[AIWordGenerator] ´Ü¾î {generatedWords.Length}°³ »ı¼º ¿Ï·á!");
-            Debug.Log("[AIWordGenerator] ´Ü¾î ¸ñ·Ï: " + string.Join(", ", generatedWords));
-            Debug.Log($"[AIWordGenerator] ÃÑ ´©Àû ´Ü¾î: {usedWords.Count}°³");
+            Debug.Log($"[AIWordGenerator] ë‹¨ì–´ {generatedWords.Length}ê°œ ìƒì„± ì™„ë£Œ!");
+            Debug.Log("[AIWordGenerator] ë‹¨ì–´ ëª©ë¡: " + string.Join(", ", generatedWords));
+            Debug.Log($"[AIWordGenerator] ì´ ì‚¬ìš©ëœ ë‹¨ì–´: {usedWords.Count}ê°œ");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[AIWordGenerator] JSON ÆÄ½Ì ½ÇÆĞ: {e.Message}");
+            Debug.LogError($"[AIWordGenerator] JSON íŒŒì‹± ì‹¤íŒ¨: {e.Message}");
         }
     }
 

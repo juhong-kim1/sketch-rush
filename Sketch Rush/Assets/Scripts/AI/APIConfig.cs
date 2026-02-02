@@ -4,6 +4,8 @@ using UnityEngine;
 public class APIConfig : ScriptableObject
 {
     [SerializeField] private string claudeApiKey;
+    [SerializeField] private string openAIApiKey;
 
     public string ClaudeApiKey => claudeApiKey;
+    public string OpenAIApiKey => openAIApiKey;
 }

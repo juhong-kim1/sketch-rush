@@ -472,6 +472,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed83bcb9da991dc40acfa744fd38ab74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  useOpenAI: 0
 --- !u!4 &986238827
 Transform:
   m_ObjectHideFlags: 0
