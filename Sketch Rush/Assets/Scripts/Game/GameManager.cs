@@ -8,20 +8,37 @@ public class GameManager : MonoBehaviour
     [SerializeField] private AIWordGenerator wordGenerator;
     [SerializeField] private DrawingCanvas drawingCanvas;
 
-    public bool IsPlaying { get; private set; }
+    // === Game Settings ===
+    [Header("Game Settings")]
+    [SerializeField] private float drawingTime = 5f;
+    [SerializeField] private float quizTime = 10f;
+    [SerializeField] private int quizCount = 3;
 
+    // === State ===
     private GameState currentState;
+    public bool IsActive { get; private set; }
+
+    // === Drawing Phase ===
     private Queue<string> wordQueue = new Queue<string>();
     private string currentWord;
     private float timeLeft;
+    private Dictionary<string, Texture2D> drawnImages = new Dictionary<string, Texture2D>();
+
+    // === Quiz Phase ===
+    private List<KeyValuePair<string, Texture2D>> quizList = new List<KeyValuePair<string, Texture2D>>();
+    private int currentQuizIndex;
+    private string currentQuizAnswer;
+    private Texture2D currentQuizImage;
+
+    // === Score ===
     private int score;
 
-    [Header("Game Settings")]
-    [SerializeField] private float roundTime = 5f;  // 매 단어당 5초
-
+    // === Properties ===
     public float TimeLeft => timeLeft;
     public string CurrentWord => currentWord;
     public int Score => score;
+    public string CurrentQuizAnswer => currentQuizAnswer;
+    public Texture2D CurrentQuizImage => currentQuizImage;
 
     void Start()
     {
@@ -33,7 +50,6 @@ public class GameManager : MonoBehaviour
         currentState?.Update();
     }
 
-    // 상태 전환
     public void ChangeState(GameState newState)
     {
         currentState?.Exit();
@@ -41,7 +57,7 @@ public class GameManager : MonoBehaviour
         currentState.Enter();
     }
 
-    // Loading 시작 → AI 단어 로딩
+    // ===== Loading =====
     public void StartWordLoading()
     {
         StartCoroutine(LoadWords());
@@ -50,16 +66,14 @@ public class GameManager : MonoBehaviour
     IEnumerator LoadWords()
     {
         yield return StartCoroutine(wordGenerator.GenerateWords());
-
         if (wordGenerator.generatedWords != null && wordGenerator.generatedWords.Length > 0)
         {
             wordQueue.Clear();
+            drawnImages.Clear();
             foreach (string word in wordGenerator.generatedWords)
-            {
                 wordQueue.Enqueue(word);
-            }
             Debug.Log($"[GameManager] Loaded {wordQueue.Count} words");
-            ChangeState(new PlayingState(this));
+            ChangeState(new DrawingState(this));
         }
         else
         {
@@ -68,84 +82,167 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Playing 시작
-    public void StartPlaying()
+    // ===== Drawing =====
+    public void StartDrawing()
     {
-        IsPlaying = true;
-        NextWord();              // 첫 단어
-        timeLeft = roundTime;    // 5초
-        GameEventSystem.Publish("OnTimerStart", roundTime);
+        IsActive = true;
+        NextDrawingWord();
+        timeLeft = drawingTime;
+        GameEventSystem.Publish("OnTimerUpdate", timeLeft);
     }
 
-    // Playing 업데이트 (매프레임)
-    public void UpdatePlaying()
+    public void UpdateDrawing()
     {
-        if (!IsPlaying) return;
-
+        if (!IsActive) return;
         timeLeft -= Time.deltaTime;
         GameEventSystem.Publish("OnTimerUpdate", timeLeft);
-
         if (timeLeft <= 0)
         {
+            SaveCurrentDrawing();
             if (wordQueue.Count > 0)
             {
-                // 단어 남아있으면 다음 단어 + 타이머 리셋
-                NextWord();
-                timeLeft = roundTime;
+                NextDrawingWord();
+                timeLeft = drawingTime;
             }
             else
             {
-                // 단어 없으면 게임 종료
-                timeLeft = 0;
-                IsPlaying = false;
-                GameEventSystem.Publish("OnTimerEnd");
-                ChangeState(new EndState(this));
+                IsActive = false;
+                ChangeState(new QuizState(this));
             }
         }
     }
 
-    // 다음 단어
-    public void NextWord()
+    private void NextDrawingWord()
     {
         if (wordQueue.Count > 0)
         {
             currentWord = wordQueue.Dequeue();
             GameEventSystem.Publish("OnWordChanged", currentWord);
-            if (drawingCanvas != null)
-                drawingCanvas.ClearCanvas();
-            Debug.Log($"[GameManager] Current word: {currentWord}");
+            if (drawingCanvas != null) drawingCanvas.ClearCanvas();
+            Debug.Log($"[GameManager] Drawing: {currentWord}");
+        }
+    }
+
+    private void SaveCurrentDrawing()
+    {
+        if (drawingCanvas == null || currentWord == null) return;
+        Texture2D original = drawingCanvas.GetTexture();
+        Texture2D copy = new Texture2D(original.width, original.height);
+        copy.SetPixels(original.GetPixels());
+        copy.Apply();
+        drawnImages[currentWord] = copy;
+        Debug.Log($"[GameManager] Saved: {currentWord}");
+    }
+
+    // ===== Quiz =====
+    public void StartQuiz()
+    {
+        IsActive = true;
+        PrepareQuizList();
+        currentQuizIndex = 0;
+        LoadCurrentQuiz();
+        timeLeft = quizTime;
+        GameEventSystem.Publish("OnTimerUpdate", timeLeft);
+    }
+
+private void PrepareQuizList()
+    {
+        var all = new List<KeyValuePair<string, Texture2D>>(drawnImages);
+        var rng = new System.Random();
+        for (int i = all.Count - 1; i > 0; i--)
+        {
+            int j = rng.Next(i + 1);
+            (all[i], all[j]) = (all[j], all[i]);
+        }
+        quizList.Clear();
+        int count = Mathf.Min(quizCount, all.Count);
+        for (int i = 0; i < count; i++) quizList.Add(all[i]);
+        Debug.Log($"[GameManager] Quiz: {quizList.Count} questions");
+    }
+
+private void LoadCurrentQuiz()
+    {
+        if (currentQuizIndex >= quizList.Count) return;
+        currentQuizAnswer = quizList[currentQuizIndex].Key;
+        currentQuizImage = quizList[currentQuizIndex].Value;
+        GameEventSystem.Publish("OnQuizLoaded", currentQuizImage);
+        GameEventSystem.Publish("OnQuizProgress", $"{currentQuizIndex + 1}/{quizList.Count}");
+        Debug.Log($"[GameManager] Quiz [{currentQuizIndex + 1}/{quizList.Count}]");
+    }
+
+    public void UpdateQuiz()
+    {
+        if (!IsActive) return;
+        timeLeft -= Time.deltaTime;
+        GameEventSystem.Publish("OnTimerUpdate", timeLeft);
+        if (timeLeft <= 0) OnQuizWrong();
+    }
+
+    public void CheckAnswer(string playerAnswer)
+    {
+        if (!IsActive) return;
+        if (playerAnswer.Trim().Equals(currentQuizAnswer.Trim(), System.StringComparison.OrdinalIgnoreCase))
+            OnQuizCorrect();
+        else
+            GameEventSystem.Publish("OnQuizFeedback", "Wrong");
+    }
+
+    private void OnQuizCorrect()
+    {
+        IsActive = false;
+        score += 10;
+        GameEventSystem.Publish("OnScoreChanged", score);
+        GameEventSystem.Publish("OnQuizFeedback", "Correct");
+        Debug.Log($"[GameManager] Correct! Score: {score}");
+        Invoke(nameof(NextQuiz), 0.8f);
+    }
+
+private void OnQuizWrong()
+    {
+        IsActive = false;
+        GameEventSystem.Publish("OnQuizFeedback", "TimeOut:" + currentQuizAnswer);
+        Debug.Log($"[GameManager] TimeOut! Answer: {currentQuizAnswer}");
+        Invoke(nameof(NextQuiz), 1.5f);
+    }
+
+    private void NextQuiz()
+    {
+        currentQuizIndex++;
+        if (currentQuizIndex < quizList.Count)
+        {
+            IsActive = true;
+            LoadCurrentQuiz();
+            timeLeft = quizTime;
+            GameEventSystem.Publish("OnTimerUpdate", timeLeft);
+            GameEventSystem.Publish("OnQuizFeedbackClear");
         }
         else
         {
-            Debug.Log("[GameManager] No more words!");
             ChangeState(new EndState(this));
         }
     }
 
-    // 점수 추가
-    public void AddScore(int points)
-    {
-        score += points;
-        GameEventSystem.Publish("OnScoreChanged", score);
-    }
-
-    // 게임 종료
+    // ===== End / Restart =====
     public void EndGame()
     {
+        IsActive = false;
         Debug.Log($"[GameManager] Game End! Score: {score}");
         GameEventSystem.Publish("OnGameEnd", score);
     }
 
-    // 게임 재시작
     public void RestartGame()
     {
         score = 0;
         timeLeft = 0;
-        IsPlaying = false;
+        IsActive = false;
         wordQueue.Clear();
+        drawnImages.Clear();
+        quizList.Clear();
+        currentQuizIndex = 0;
         currentWord = null;
-        if (drawingCanvas != null)
-            drawingCanvas.ClearCanvas();
+        currentQuizAnswer = null;
+        currentQuizImage = null;
+        if (drawingCanvas != null) drawingCanvas.ClearCanvas();
         ChangeState(new WaitingState(this));
     }
 }

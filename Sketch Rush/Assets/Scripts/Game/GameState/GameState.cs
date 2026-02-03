@@ -47,23 +47,41 @@ public class LoadingState : GameState
     public override void Exit() { }
 }
 
-// Playing: 그림 그리기 + 타이머
-public class PlayingState : GameState
+// Drawing: 그림 그리기 + 타이머
+public class DrawingState : GameState
 {
-    public PlayingState(GameManager gameManager) : base(gameManager) { }
+    public DrawingState(GameManager gameManager) : base(gameManager) { }
 
     public override void Enter()
     {
-        Debug.Log("[GameState] Playing");
-        GameEventSystem.Publish("OnStateChanged", "Playing");
-        gameManager.StartPlaying();
-        
+        Debug.Log("[GameState] Drawing");
+        GameEventSystem.Publish("OnStateChanged", "Drawing");
+        gameManager.StartDrawing();
     }
 
     public override void Update()
     {
-        if (!gameManager.IsPlaying) return;
-        gameManager.UpdatePlaying();
+        gameManager.UpdateDrawing();
+    }
+
+    public override void Exit() { }
+}
+
+// Quiz: 그림 맞추기
+public class QuizState : GameState
+{
+    public QuizState(GameManager gameManager) : base(gameManager) { }
+
+    public override void Enter()
+    {
+        Debug.Log("[GameState] Quiz");
+        GameEventSystem.Publish("OnStateChanged", "Quiz");
+        gameManager.StartQuiz();
+    }
+
+    public override void Update()
+    {
+        gameManager.UpdateQuiz();
     }
 
     public override void Exit() { }
