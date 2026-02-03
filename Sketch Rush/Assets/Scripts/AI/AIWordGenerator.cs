@@ -44,13 +44,13 @@ public class AIWordGenerator : MonoBehaviour
         }
     }
 
-    void Start()
-    {
-        if (!string.IsNullOrEmpty(apiKey))
-        {
-            StartCoroutine(GenerateWords());
-        }
-    }
+    // void Start()
+    // {
+    //     if (!string.IsNullOrEmpty(apiKey))
+    //     {
+    //         StartCoroutine(GenerateWords());
+    //     }
+    // }
 
     public IEnumerator GenerateWords()
     {
