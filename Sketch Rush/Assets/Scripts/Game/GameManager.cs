@@ -71,9 +71,9 @@ public class GameManager : MonoBehaviour
     // Playing 시작
     public void StartPlaying()
     {
+        IsPlaying = true;
         NextWord();              // 첫 단어
         timeLeft = roundTime;    // 5초
-        IsPlaying = true;
         GameEventSystem.Publish("OnTimerStart", roundTime);
     }
 
