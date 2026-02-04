@@ -207,7 +207,7 @@ public class GameNetworkManager : MonoBehaviourPunCallbacks
         currentTargetIndex++;
 
         // 3라운드 끝?
-        if (currentTargetIndex >= 3)
+        if (currentTargetIndex >= 1)
         {
             photonView.RPC("RPC_EndGame", RpcTarget.All);
         }

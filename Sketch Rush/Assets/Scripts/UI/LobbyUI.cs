@@ -157,7 +157,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     {
         // 마스터만 Start 버튼 활성화 + 3명 이상
         bool canStart = PhotonNetwork.IsMasterClient && 
-                        PhotonNetwork.CurrentRoom.PlayerCount >= 3;
+                        PhotonNetwork.CurrentRoom.PlayerCount >= 1;
         startButton.interactable = canStart;
     }
 }
