@@ -1,48 +1,57 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Photon.Pun;
 
 public class GameManager : MonoBehaviour
 {
     [Header("Managers")]
     [SerializeField] private AIWordGenerator wordGenerator;
     [SerializeField] private DrawingCanvas drawingCanvas;
+    [SerializeField] private GameNetworkManager networkManager;
 
-    // === Game Settings ===
     [Header("Game Settings")]
     [SerializeField] private float drawingTime = 5f;
     [SerializeField] private float quizTime = 10f;
-    [SerializeField] private int quizCount = 3;
+    [SerializeField] private int totalQuizRounds = 3;
 
-    // === State ===
     private GameState currentState;
     public bool IsActive { get; private set; }
 
-    // === Drawing Phase ===
     private Queue<string> wordQueue = new Queue<string>();
     private string currentWord;
     private float timeLeft;
     private Dictionary<string, Texture2D> drawnImages = new Dictionary<string, Texture2D>();
 
-    // === Quiz Phase ===
-    private List<KeyValuePair<string, Texture2D>> quizList = new List<KeyValuePair<string, Texture2D>>();
-    private int currentQuizIndex;
+    private List<string> quizWordList = new List<string>(); // 20개 단어 중 랜덤 선택용
+    private int currentQuizRound = 0;
+    private int currentTargetActorNumber = -1;
     private string currentQuizAnswer;
-    private Texture2D currentQuizImage;
+    private bool isMyTurn = false;
+    private bool canAnswer = false; // 지목된 사람 틀린 후 다른 사람들 활성화
 
-    // === Score ===
-    private int score;
-
-    // === Properties ===
     public float TimeLeft => timeLeft;
     public string CurrentWord => currentWord;
-    public int Score => score;
     public string CurrentQuizAnswer => currentQuizAnswer;
-    public Texture2D CurrentQuizImage => currentQuizImage;
+
+    void Awake()
+    {
+        if (networkManager == null)
+            networkManager = FindAnyObjectByType<GameNetworkManager>();
+    }
 
     void Start()
     {
-        ChangeState(new WaitingState(this));
+        // 멀티플레이에서는 Waiting 상태 스킵 (로비에서 시작했으니)
+        if (PhotonNetwork.IsMasterClient)
+        {
+            ChangeState(new LoadingState(this));
+        }
+        else
+        {
+            // 클라이언트는 대기
+            GameEventSystem.Publish("OnStateChanged", "Loading");
+        }
     }
 
     void Update()
@@ -60,26 +69,35 @@ public class GameManager : MonoBehaviour
     // ===== Loading =====
     public void StartWordLoading()
     {
-        StartCoroutine(LoadWords());
+        if (PhotonNetwork.IsMasterClient)
+        {
+            // 호스트만 AI 호출
+            networkManager.StartWordGeneration();
+        }
     }
 
-    IEnumerator LoadWords()
+    // RPC로 받은 단어 처리
+    public void ReceiveWords(string[] words)
     {
-        yield return StartCoroutine(wordGenerator.GenerateWords());
-        if (wordGenerator.generatedWords != null && wordGenerator.generatedWords.Length > 0)
+        wordQueue.Clear();
+        drawnImages.Clear();
+        quizWordList.Clear();
+
+        foreach (string word in words)
         {
-            wordQueue.Clear();
-            drawnImages.Clear();
-            foreach (string word in wordGenerator.generatedWords)
-                wordQueue.Enqueue(word);
-            Debug.Log($"[GameManager] Loaded {wordQueue.Count} words");
-            ChangeState(new DrawingState(this));
+            wordQueue.Enqueue(word);
+            quizWordList.Add(word);
         }
-        else
+
+        Debug.Log($"[GameManager] Received {wordQueue.Count} words");
+        
+        // Drawing 상태로 전환
+        if (PhotonNetwork.IsMasterClient)
         {
-            Debug.LogError("[GameManager] Word loading failed!");
-            ChangeState(new WaitingState(this));
+            networkManager.SyncStateChange("Drawing");
         }
+        
+        ChangeState(new DrawingState(this));
     }
 
     // ===== Drawing =====
@@ -96,9 +114,11 @@ public class GameManager : MonoBehaviour
         if (!IsActive) return;
         timeLeft -= Time.deltaTime;
         GameEventSystem.Publish("OnTimerUpdate", timeLeft);
+        
         if (timeLeft <= 0)
         {
             SaveCurrentDrawing();
+            
             if (wordQueue.Count > 0)
             {
                 NextDrawingWord();
@@ -107,6 +127,14 @@ public class GameManager : MonoBehaviour
             else
             {
                 IsActive = false;
+                
+                // Drawing 완료 → Quiz로
+                if (PhotonNetwork.IsMasterClient)
+                {
+                    networkManager.SyncStateChange("Quiz");
+                    networkManager.StartQuiz();
+                }
+                
                 ChangeState(new QuizState(this));
             }
         }
@@ -126,123 +154,146 @@ public class GameManager : MonoBehaviour
     private void SaveCurrentDrawing()
     {
         if (drawingCanvas == null || currentWord == null) return;
+        
         Texture2D original = drawingCanvas.GetTexture();
         Texture2D copy = new Texture2D(original.width, original.height);
         copy.SetPixels(original.GetPixels());
         copy.Apply();
         drawnImages[currentWord] = copy;
+        
         Debug.Log($"[GameManager] Saved: {currentWord}");
     }
 
     // ===== Quiz =====
     public void StartQuiz()
     {
+        // NetworkManager가 호출함
+        Debug.Log("[GameManager] Quiz Phase Started");
+    }
+
+    public void StartQuizRound(int roundIndex, int targetActorNumber, bool myTurn)
+    {
+        currentQuizRound = roundIndex;
+        currentTargetActorNumber = targetActorNumber;
+        isMyTurn = myTurn;
+        canAnswer = myTurn; // 처음엔 지목된 사람만
         IsActive = true;
-        PrepareQuizList();
-        currentQuizIndex = 0;
-        LoadCurrentQuiz();
+
+        // 랜덤으로 단어 선택
+        if (quizWordList.Count > 0)
+        {
+            int randomIndex = Random.Range(0, quizWordList.Count);
+            currentQuizAnswer = quizWordList[randomIndex];
+            quizWordList.RemoveAt(randomIndex); // 중복 방지
+        }
+
+        // 내 그림 표시
+        if (drawnImages.ContainsKey(currentQuizAnswer))
+        {
+            GameEventSystem.Publish("OnQuizLoaded", drawnImages[currentQuizAnswer]);
+        }
+
+        // UI 갱신
+        GameEventSystem.Publish("OnQuizProgress", $"Round {currentQuizRound + 1}/{totalQuizRounds}");
+        
+        if (isMyTurn)
+        {
+            GameEventSystem.Publish("OnQuizTurn", "Your Turn!");
+        }
+        else
+        {
+            string targetName = GetPlayerName(targetActorNumber);
+            GameEventSystem.Publish("OnQuizTurn", $"{targetName}'s Turn");
+        }
+
         timeLeft = quizTime;
         GameEventSystem.Publish("OnTimerUpdate", timeLeft);
-    }
-
-private void PrepareQuizList()
-    {
-        var all = new List<KeyValuePair<string, Texture2D>>(drawnImages);
-        var rng = new System.Random();
-        for (int i = all.Count - 1; i > 0; i--)
-        {
-            int j = rng.Next(i + 1);
-            (all[i], all[j]) = (all[j], all[i]);
-        }
-        quizList.Clear();
-        int count = Mathf.Min(quizCount, all.Count);
-        for (int i = 0; i < count; i++) quizList.Add(all[i]);
-        Debug.Log($"[GameManager] Quiz: {quizList.Count} questions");
-    }
-
-private void LoadCurrentQuiz()
-    {
-        if (currentQuizIndex >= quizList.Count) return;
-        currentQuizAnswer = quizList[currentQuizIndex].Key;
-        currentQuizImage = quizList[currentQuizIndex].Value;
-        GameEventSystem.Publish("OnQuizLoaded", currentQuizImage);
-        GameEventSystem.Publish("OnQuizProgress", $"{currentQuizIndex + 1}/{quizList.Count}");
-        Debug.Log($"[GameManager] Quiz [{currentQuizIndex + 1}/{quizList.Count}]");
     }
 
     public void UpdateQuiz()
     {
         if (!IsActive) return;
+        
         timeLeft -= Time.deltaTime;
         GameEventSystem.Publish("OnTimerUpdate", timeLeft);
-        if (timeLeft <= 0) OnQuizWrong();
     }
 
+    // 정답 제출
     public void CheckAnswer(string playerAnswer)
     {
         if (!IsActive) return;
-        if (playerAnswer.Trim().Equals(currentQuizAnswer.Trim(), System.StringComparison.OrdinalIgnoreCase))
-            OnQuizCorrect();
-        else
-            GameEventSystem.Publish("OnQuizFeedback", "Wrong");
+        if (!canAnswer) return; // 답변 불가 상태면 무시
+
+        networkManager.SubmitAnswer(playerAnswer);
     }
 
-    private void OnQuizCorrect()
+    // 지목된 사람이 틀림 → 다른 사람들 활성화
+    public void OnTargetWrong()
     {
-        IsActive = false;
-        score += 10;
-        GameEventSystem.Publish("OnScoreChanged", score);
-        GameEventSystem.Publish("OnQuizFeedback", "Correct");
-        Debug.Log($"[GameManager] Correct! Score: {score}");
-        Invoke(nameof(NextQuiz), 0.8f);
-    }
-
-private void OnQuizWrong()
-    {
-        IsActive = false;
-        GameEventSystem.Publish("OnQuizFeedback", "TimeOut:" + currentQuizAnswer);
-        Debug.Log($"[GameManager] TimeOut! Answer: {currentQuizAnswer}");
-        Invoke(nameof(NextQuiz), 1.5f);
-    }
-
-    private void NextQuiz()
-    {
-        currentQuizIndex++;
-        if (currentQuizIndex < quizList.Count)
+        if (!isMyTurn)
         {
-            IsActive = true;
-            LoadCurrentQuiz();
-            timeLeft = quizTime;
-            GameEventSystem.Publish("OnTimerUpdate", timeLeft);
-            GameEventSystem.Publish("OnQuizFeedbackClear");
-        }
-        else
-        {
-            ChangeState(new EndState(this));
+            canAnswer = true;
+            GameEventSystem.Publish("OnQuizTurn", "Answer Now!");
         }
     }
 
-    // ===== End / Restart =====
-    public void EndGame()
+    // 퀴즈 결과 표시
+    public void ShowQuizResult(int targetActorNumber, string correctAnswer, bool wasCorrect, int winnerActorNumber, int points)
     {
         IsActive = false;
-        Debug.Log($"[GameManager] Game End! Score: {score}");
-        GameEventSystem.Publish("OnGameEnd", score);
+        canAnswer = false;
+
+        // 결과 UI 표시
+        string resultText = "";
+        
+        if (wasCorrect)
+        {
+            if (winnerActorNumber == targetActorNumber)
+            {
+                resultText = $"{GetPlayerName(targetActorNumber)} got it! +{points}pt";
+            }
+            else
+            {
+                resultText = $"{GetPlayerName(winnerActorNumber)} stole it! +{points}pt";
+            }
+        }
+        else
+        {
+            resultText = $"Time Out! Answer: {correctAnswer}";
+        }
+
+        GameEventSystem.Publish("OnQuizResult", resultText);
+
+        // 타겟의 그림 공개 (TODO: PNG 전송)
+        // 지금은 일단 자기 그림만 보임
+    }
+
+    // ===== End =====
+    public void EndGame(List<PlayerData> sortedPlayers)
+    {
+        IsActive = false;
+        ChangeState(new EndState(this));
+        
+        // 최종 점수 UI 표시
+        string leaderboard = "Final Scores:\n";
+        for (int i = 0; i < sortedPlayers.Count; i++)
+        {
+            leaderboard += $"{i + 1}. {sortedPlayers[i].nickname}: {sortedPlayers[i].score}pt\n";
+        }
+        
+        GameEventSystem.Publish("OnGameEnd", leaderboard);
+        Debug.Log($"[GameManager] {leaderboard}");
     }
 
     public void RestartGame()
     {
-        score = 0;
-        timeLeft = 0;
-        IsActive = false;
-        wordQueue.Clear();
-        drawnImages.Clear();
-        quizList.Clear();
-        currentQuizIndex = 0;
-        currentWord = null;
-        currentQuizAnswer = null;
-        currentQuizImage = null;
-        if (drawingCanvas != null) drawingCanvas.ClearCanvas();
-        ChangeState(new WaitingState(this));
+        // 로비로 돌아가기
+        PhotonNetwork.LoadLevel("LobbyScene");
+    }
+
+    private string GetPlayerName(int actorNumber)
+    {
+        var playerData = networkManager.GetPlayerData(actorNumber);
+        return playerData != null ? playerData.nickname : $"Player{actorNumber}";
     }
 }

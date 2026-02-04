@@ -27,6 +27,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI quizFeedbackText;
     [SerializeField] private TextMeshProUGUI quizProgressText;
     [SerializeField] private Button submitButton;
+    [SerializeField] private TextMeshProUGUI quizTurnText;
 
     [Header("End UI")]
     [SerializeField] private TextMeshProUGUI endScoreText;
@@ -50,6 +51,8 @@ public class UIManager : MonoBehaviour
         GameEventSystem.Subscribe("OnQuizFeedback", OnQuizFeedback);
         GameEventSystem.Subscribe("OnQuizFeedbackClear", OnQuizFeedbackClear);
         GameEventSystem.Subscribe("OnQuizProgress", OnQuizProgress);
+        GameEventSystem.Subscribe("OnQuizTurn", OnQuizTurn);
+        GameEventSystem.Subscribe("OnQuizResult", OnQuizResult);
     }
 
     void OnDestroy()
@@ -63,6 +66,8 @@ public class UIManager : MonoBehaviour
         GameEventSystem.Unsubscribe("OnQuizFeedback", OnQuizFeedback);
         GameEventSystem.Unsubscribe("OnQuizFeedbackClear", OnQuizFeedbackClear);
         GameEventSystem.Unsubscribe("OnQuizProgress", OnQuizProgress);
+        GameEventSystem.Unsubscribe("OnQuizTurn", OnQuizTurn);
+        GameEventSystem.Unsubscribe("OnQuizResult", OnQuizResult);
     }
 
     void Start()
@@ -120,6 +125,21 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    private void OnQuizTurn(object data)
+    {
+        string turnText = (string)data;
+        quizTurnText.text = turnText;
+        Debug.Log($"[UIManager] Turn: {turnText}");
+    }
+
+    private void OnQuizResult(object data)
+    {
+        string resultText = (string)data;
+        quizFeedbackText.text = resultText;
+        quizFeedbackText.color = Color.cyan;
+        Debug.Log($"[UIManager] Result: {resultText}");
+    }
+
     private void OnScoreChanged(object data)
     {
         scoreText.text = "Score: " + (int)data;
@@ -127,7 +147,8 @@ public class UIManager : MonoBehaviour
 
     private void OnGameEnd(object data)
     {
-        endScoreText.text = "Final Score: " + (int)data;
+        string leaderboard = (string)data;
+        endScoreText.text = leaderboard;
     }
 
     // ===== Quiz 이벤트 =====

@@ -124,7 +124,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
             return;
         }
 
-        if (PhotonNetwork.CurrentRoom.PlayerCount < 3)
+        if (PhotonNetwork.CurrentRoom.PlayerCount < 1)
         {
             Debug.LogWarning("[NetworkManager] Need at least 3 players!");
             return;

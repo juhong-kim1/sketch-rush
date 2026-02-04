@@ -96,7 +96,6 @@ public class EndState : GameState
     {
         Debug.Log("[GameState] End");
         GameEventSystem.Publish("OnStateChanged", "End");
-        gameManager.EndGame();
     }
 
     public override void Update() { }
