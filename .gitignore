@@ -101,3 +101,6 @@ InitTestScene*.unity*
 # API Keys (절대 커밋 금지!)
 Assets/Resources/APIConfig.asset
 Assets/Resources/APIConfig.asset.meta
+
+# ParallelSync Clone
+Sketch Rush_clone_*/

@@ -16,6 +16,7 @@ public class GameNetworkManager : MonoBehaviourPunCallbacks
     // === Quiz 관련 ===
     private List<int> playerOrder = new List<int>(); // 플레이어 순서
     private int currentTargetIndex = 0; // 현재 지목된 플레이어 인덱스
+    private List<string> quizWordPool = new List<string>(); // 전체 단어 풀
     private bool isWaitingForAnswer = false;
 
     void Awake()
@@ -82,6 +83,10 @@ public class GameNetworkManager : MonoBehaviourPunCallbacks
         string[] words = wordsString.Split(',');
         Debug.Log($"[GameNetworkManager] Received {words.Length} words");
         
+        // 단어 풀 저장
+        quizWordPool.Clear();
+        quizWordPool.AddRange(words);
+        
         // GameManager에 단어 전달
         gameManager.ReceiveWords(words);
     }
@@ -103,29 +108,61 @@ public class GameNetworkManager : MonoBehaviourPunCallbacks
     }
 
     // ===== Quiz 시작 =====
-    public void StartQuiz()
+public void StartQuiz()
     {
         if (PhotonNetwork.IsMasterClient)
         {
             currentTargetIndex = 0;
-            photonView.RPC("RPC_StartQuizRound", RpcTarget.All, 0);
+            
+            // 단어 선택
+            string selectedWord = SelectRandomWord();
+            photonView.RPC("RPC_StartQuizRound", RpcTarget.All, 0, selectedWord);
         }
     }
 
-    [PunRPC]
-    void RPC_StartQuizRound(int roundIndex)
+private string SelectRandomWord()
     {
-        currentTargetIndex = roundIndex % playerOrder.Count;
-        int targetActorNumber = playerOrder[currentTargetIndex];
+        if (quizWordPool.Count == 0)
+        {
+            Debug.LogError("[GameNetworkManager] Word pool is empty!");
+            return "ERROR";
+        }
         
-        Debug.Log($"[GameNetworkManager] Round {roundIndex + 1}: Target = {targetActorNumber}");
+        int randomIndex = Random.Range(0, quizWordPool.Count);
+        string selectedWord = quizWordPool[randomIndex];
+        quizWordPool.RemoveAt(randomIndex); // 중복 방지
         
-        // GameManager에 퀴즈 시작 알림
+        return selectedWord;
+    }
+
+[PunRPC]
+    void RPC_StartQuizRound(int roundIndex, string selectedWord)
+    {
+        // roundIndex를 그대로 사용 (플레이어 수와 무관하게)
+        currentTargetIndex = roundIndex;
+        int targetIndex = currentTargetIndex % playerOrder.Count;
+        int targetActorNumber = playerOrder[targetIndex];
+        
+        Debug.Log($"[GameNetworkManager] Round {roundIndex + 1}: Target = {targetActorNumber} (index={currentTargetIndex}), Word = {selectedWord}");
+        
+        // GameManager에 퀴즈 시작 알림 (단어 포함)
         bool isMyTurn = targetActorNumber == PhotonNetwork.LocalPlayer.ActorNumber;
-        gameManager.StartQuizRound(roundIndex, targetActorNumber, isMyTurn);
+        gameManager.StartQuizRound(roundIndex, targetActorNumber, isMyTurn, selectedWord);
         
         isWaitingForAnswer = true;
+        
+        // Phase 1 타임아웃 설정 (10초)
+        if (PhotonNetwork.IsMasterClient)
+        {
+            CancelInvoke(nameof(QuizTimeOut));
+            Invoke(nameof(QuizTimeOut), 10f);
+        }
     }
+
+
+
+    //[PunRPC]
+
 
     // ===== 정답 제출 =====
     public void SubmitAnswer(string answer)
@@ -140,89 +177,119 @@ public class GameNetworkManager : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.IsMasterClient) return;
         if (!isWaitingForAnswer) return;
 
-        int targetActorNumber = playerOrder[currentTargetIndex];
+        // 타겟 인덱스 계산 (플레이어 수로 모듈로)
+        int targetIndex = currentTargetIndex % playerOrder.Count;
+        int targetActorNumber = playerOrder[targetIndex];
         string correctAnswer = gameManager.CurrentQuizAnswer;
 
         bool isCorrect = answer.Trim().Equals(correctAnswer.Trim(), System.StringComparison.OrdinalIgnoreCase);
 
         if (isCorrect)
         {
-            // 정답!
+            isWaitingForAnswer = false;
+            CancelInvoke(nameof(QuizTimeOut));
+
             int points = (actorNumber == targetActorNumber) ? 3 : 1;
             playerDataDict[actorNumber].score += points;
 
-            photonView.RPC("RPC_QuizResult", RpcTarget.All, 
-                actorNumber, 
-                targetActorNumber, 
-                correctAnswer, 
-                true, 
+            photonView.RPC("RPC_QuizResult", RpcTarget.All,
+                actorNumber,
+                targetActorNumber,
+                correctAnswer,
+                true,
                 points);
 
-            isWaitingForAnswer = false;
-            
-            // 1.5초 후 다음 라운드 또는 종료
             Invoke(nameof(NextQuizRound), 1.5f);
         }
         else
         {
-            // 틀림 (지목된 사람만)
             if (actorNumber == targetActorNumber)
             {
                 photonView.RPC("RPC_TargetWrong", RpcTarget.All, targetActorNumber);
-                // 10초 타이머 시작 (다른 사람들 경쟁)
+                CancelInvoke(nameof(QuizTimeOut));
                 Invoke(nameof(QuizTimeOut), 10f);
             }
             else
             {
-                // 지목 안 된 사람이 틀림 → 피드백만
                 photonView.RPC("RPC_WrongFeedback", RpcTarget.All, actorNumber);
             }
         }
     }
 
-    void QuizTimeOut()
+void QuizTimeOut()
     {
         if (!PhotonNetwork.IsMasterClient) return;
         if (!isWaitingForAnswer) return;
 
-        // 타임아웃
-        int targetActorNumber = playerOrder[currentTargetIndex];
-        string correctAnswer = gameManager.CurrentQuizAnswer;
+        Debug.Log("[GameNetworkManager] QuizTimeOut called");
+        
+        // Phase 체크: GameManager에서 확인
+        var currentPhase = gameManager.GetCurrentPhase();
+        
+        // 타겟 인덱스 계산 (플레이어 수로 모듈로)
+        int targetIndex = currentTargetIndex % playerOrder.Count;
+        int targetActorNumber = playerOrder[targetIndex];
+        
+        if (currentPhase == GameManager.QuizPhase.TargetTurn)
+        {
+            // Phase 1 타임아웃 -> Phase 2로 전환
+            Debug.Log("[GameNetworkManager] Phase 1 timeout -> Starting Phase 2");
+            photonView.RPC("RPC_TargetWrong", RpcTarget.All, targetActorNumber);
+            
+            // Phase 2 타임아웃 설정 (10초)
+            CancelInvoke(nameof(QuizTimeOut));
+            Invoke(nameof(QuizTimeOut), 10f);
+        }
+        else
+        {
+            // Phase 2 타임아웃 -> 다음 라운드
+            Debug.Log("[GameNetworkManager] Phase 2 timeout -> Next round");
+            string correctAnswer = gameManager.CurrentQuizAnswer;
 
-        photonView.RPC("RPC_QuizResult", RpcTarget.All, 
-            -1, 
-            targetActorNumber, 
-            correctAnswer, 
-            false, 
-            0);
+            photonView.RPC("RPC_QuizResult", RpcTarget.All, 
+                -1, 
+                targetActorNumber, 
+                correctAnswer, 
+                false, 
+                0);
 
-        isWaitingForAnswer = false;
-        Invoke(nameof(NextQuizRound), 1.5f);
+            isWaitingForAnswer = false;
+            Invoke(nameof(NextQuizRound), 1.5f);
+        }
     }
 
-    void NextQuizRound()
+void NextQuizRound()
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
         currentTargetIndex++;
 
-        // 3라운드 끝?
-        if (currentTargetIndex >= 1)
+        // 총 라운드 = 플레이어 수 × 3
+        int totalRounds = playerOrder.Count * 3;
+        
+        Debug.Log($"[GameNetworkManager] NextQuizRound: currentTargetIndex={currentTargetIndex}, totalRounds={totalRounds}");
+        
+        if (currentTargetIndex >= totalRounds)
         {
+            Debug.Log("[GameNetworkManager] Game Over! Ending game.");
             photonView.RPC("RPC_EndGame", RpcTarget.All);
         }
         else
         {
-            photonView.RPC("RPC_StartQuizRound", RpcTarget.All, currentTargetIndex);
+            // 다음 라운드 단어 선택
+            string selectedWord = SelectRandomWord();
+            Debug.Log($"[GameNetworkManager] Starting round {currentTargetIndex + 1} with word: {selectedWord}");
+            photonView.RPC("RPC_StartQuizRound", RpcTarget.All, currentTargetIndex, selectedWord);
         }
     }
 
     [PunRPC]
     void RPC_TargetWrong(int targetActorNumber)
     {
-        Debug.Log($"[GameNetworkManager] Target {targetActorNumber} wrong! Others can answer now.");
-        GameEventSystem.Publish("OnQuizFeedback", "TargetWrong");
-        // 10초 타이머 UI 표시
+        Debug.Log($"[GameNetworkManager] Target {targetActorNumber} wrong! Starting Phase 2.");
+        
+        // GameManager에 Phase 2 시작 요청
+        gameManager.StartPhase2();
     }
 
     [PunRPC]
@@ -238,12 +305,6 @@ public class GameNetworkManager : MonoBehaviourPunCallbacks
     void RPC_QuizResult(int winnerActorNumber, int targetActorNumber, string correctAnswer, bool wasCorrect, int points)
     {
         Debug.Log($"[GameNetworkManager] Result: winner={winnerActorNumber}, target={targetActorNumber}, correct={wasCorrect}");
-        
-        // 점수 갱신
-        if (winnerActorNumber > 0 && playerDataDict.ContainsKey(winnerActorNumber))
-        {
-            playerDataDict[winnerActorNumber].score += points;
-        }
 
         gameManager.ShowQuizResult(targetActorNumber, correctAnswer, wasCorrect, winnerActorNumber, points);
     }

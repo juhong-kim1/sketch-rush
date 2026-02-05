@@ -72,9 +72,9 @@ public class QuizState : GameState
 {
     public QuizState(GameManager gameManager) : base(gameManager) { }
 
-    public override void Enter()
+public override void Enter()
     {
-        Debug.Log("[GameState] Quiz");
+        Debug.Log("[GameState] Quiz - Phase 1 (Target's Turn)");
         GameEventSystem.Publish("OnStateChanged", "Quiz");
         gameManager.StartQuiz();
     }

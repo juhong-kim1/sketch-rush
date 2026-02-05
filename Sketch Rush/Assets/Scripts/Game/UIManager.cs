@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections;
+
 using UnityEngine.UI;
 using TMPro;
 
@@ -9,7 +11,7 @@ using TMPro;
 public class UIManager : MonoBehaviour
 {
     [Header("Panels")]
-    [SerializeField] private GameObject waitingPanel;
+    
     [SerializeField] private GameObject loadingPanel;
     [SerializeField] private GameObject drawingPanel;
     [SerializeField] private GameObject quizPanel;
@@ -28,12 +30,14 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI quizProgressText;
     [SerializeField] private Button submitButton;
     [SerializeField] private TextMeshProUGUI quizTurnText;
+    [SerializeField] private TextMeshProUGUI phaseText;
+    [SerializeField] private TextMeshProUGUI feedbackText;
+
 
     [Header("End UI")]
     [SerializeField] private TextMeshProUGUI endScoreText;
 
     [Header("Buttons")]
-    [SerializeField] private Button startButton;
     [SerializeField] private Button restartButton;
 
     private GameManager gameManager;
@@ -70,19 +74,15 @@ public class UIManager : MonoBehaviour
         GameEventSystem.Unsubscribe("OnQuizResult", OnQuizResult);
     }
 
-    void Start()
+void Start()
     {
-        startButton.onClick.AddListener(OnStartClick);
         submitButton.onClick.AddListener(OnSubmitClick);
-        restartButton.onClick.AddListener(OnRestartClick);
-
-        ShowPanel("Waiting");
+        restartButton.onClick.AddListener(OnReturnToRoomClick);
     }
 
     // ===== Panel 전환 =====
-    private void ShowPanel(string state)
+private void ShowPanel(string state)
     {
-        waitingPanel.SetActive(state == "Waiting");
         loadingPanel.SetActive(state == "Loading");
         drawingPanel.SetActive(state == "Drawing");
         quizPanel.SetActive(state == "Quiz");
@@ -197,10 +197,7 @@ private void OnQuizFeedback(object data)
     }
 
     // ===== 버튼 클릭 =====
-    private void OnStartClick()
-    {
-        gameManager.ChangeState(new LoadingState(gameManager));
-    }
+
 
     private void OnSubmitClick()
     {
@@ -208,8 +205,39 @@ private void OnQuizFeedback(object data)
             gameManager.CheckAnswer(quizInput.text);
     }
 
-    private void OnRestartClick()
+    private void OnReturnToRoomClick()
     {
-        gameManager.RestartGame();
+        gameManager.ReturnToRoom();
+    }
+
+
+public void ShowPhaseInfo(string phaseTitle, string phaseDescription)
+    {
+        if (phaseText != null)
+        {
+            phaseText.text = $"{phaseTitle}\n{phaseDescription}";
+        }
+        Debug.Log($"[UIManager] ShowPhaseInfo: {phaseTitle} - {phaseDescription}");
+    }
+
+
+public void ShowFeedback(string message, bool isCorrect)
+    {
+        if (feedbackText != null)
+        {
+            feedbackText.text = message;
+            feedbackText.color = isCorrect ? Color.green : Color.red;
+            StartCoroutine(HideFeedbackAfterDelay(2f));
+        }
+        Debug.Log($"[UIManager] ShowFeedback: {message} (Correct: {isCorrect})");
+    }
+
+    private IEnumerator HideFeedbackAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (feedbackText != null)
+        {
+            feedbackText.text = "";
+        }
     }
 }
