@@ -177,7 +177,6 @@ private string SelectRandomWord()
         if (!PhotonNetwork.IsMasterClient) return;
         if (!isWaitingForAnswer) return;
 
-        // 타겟 인덱스 계산 (플레이어 수로 모듈로)
         int targetIndex = currentTargetIndex % playerOrder.Count;
         int targetActorNumber = playerOrder[targetIndex];
         string correctAnswer = gameManager.CurrentQuizAnswer;
@@ -191,6 +190,8 @@ private string SelectRandomWord()
 
             int points = (actorNumber == targetActorNumber) ? 3 : 1;
             playerDataDict[actorNumber].score += points;
+
+            photonView.RPC("RPC_UpdateScore", RpcTarget.All, actorNumber, playerDataDict[actorNumber].score);
 
             photonView.RPC("RPC_QuizResult", RpcTarget.All,
                 actorNumber,
@@ -216,7 +217,25 @@ private string SelectRandomWord()
         }
     }
 
-void QuizTimeOut()
+    [PunRPC]
+    void RPC_UpdateScore(int actorNumber, int newScore)
+    {
+        // 모든 클라이언트의 playerDataDict 업데이트
+        if (playerDataDict.ContainsKey(actorNumber))
+        {
+            playerDataDict[actorNumber].score = newScore;
+        }
+
+        // 로컬 플레이어의 점수라면 UI 업데이트
+        if (actorNumber == PhotonNetwork.LocalPlayer.ActorNumber)
+        {
+            GameEventSystem.Publish("OnScoreChanged", newScore);
+        }
+
+        Debug.Log($"[NetworkGameManager] Score updated: Player {actorNumber} = {newScore}");
+    }
+
+    void QuizTimeOut()
     {
         if (!PhotonNetwork.IsMasterClient) return;
         if (!isWaitingForAnswer) return;
@@ -258,7 +277,7 @@ void QuizTimeOut()
         }
     }
 
-void NextQuizRound()
+    void NextQuizRound()
     {
         if (!PhotonNetwork.IsMasterClient) return;
 

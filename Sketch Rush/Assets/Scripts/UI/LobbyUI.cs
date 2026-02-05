@@ -40,6 +40,30 @@ public class LobbyUI : MonoBehaviourPunCallbacks
 
     void Start()
     {
+        if (PhotonNetwork.InRoom)
+        {
+            // AutomaticallySyncScene 설정
+            if (!PhotonNetwork.IsMasterClient)
+            {
+                PhotonNetwork.AutomaticallySyncScene = false;
+            }
+            else
+            {
+                PhotonNetwork.AutomaticallySyncScene = true;
+            }
+
+            // Room Panel 표시
+            ShowPanel("Room");
+            roomNameText.text = $"Room: {PhotonNetwork.CurrentRoom.Name}";
+            UpdatePlayerList();
+            UpdateStartButton();
+        }
+        else
+        {
+            // Nickname Panel 표시
+            ShowPanel("Nickname");
+        }
+
         // 버튼 리스너
         confirmButton.onClick.AddListener(OnConfirmNickname);
         createRoomButton.onClick.AddListener(OnCreateRoom);
@@ -48,7 +72,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         leaveButton.onClick.AddListener(OnLeaveRoom);
 
         // 초기 패널
-        ShowPanel("Nickname");
+        //ShowPanel("Nickname");
     }
 
     // ===== 패널 전환 =====
