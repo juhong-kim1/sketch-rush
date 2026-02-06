@@ -435,6 +435,18 @@ private string SelectRandomWord()
         {
             playerDataDict[myActorNumber].drawings[word] = pngData;
             Debug.Log($"[NetworkGameManager] Saved drawing for word: {word}, size: {pngData.Length} bytes");
+
+            photonView.RPC("RPC_SyncDrawing", RpcTarget.AllBuffered, myActorNumber, word, pngData);
+        }
+    }
+
+    [PunRPC]
+    void RPC_SyncDrawing(int actorNumber, string word, byte[] pngData)
+    {
+        if (playerDataDict.ContainsKey(actorNumber))
+        {
+            playerDataDict[actorNumber].drawings[word] = pngData;
+            Debug.Log($"[NetworkGameManager] Synced drawing: Player {actorNumber}, Word: {word}, Size: {pngData.Length}");
         }
     }
 }
