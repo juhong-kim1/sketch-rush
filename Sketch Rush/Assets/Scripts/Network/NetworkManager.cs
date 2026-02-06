@@ -186,4 +186,35 @@ public class NetworkManager : MonoBehaviourPunCallbacks
             GameEventSystem.Publish("OnPlayerReadyChanged", targetPlayer);
         }
     }
+
+    public void KickPlayer(Player player)
+    {
+        if (!PhotonNetwork.IsMasterClient)
+        {
+            Debug.LogWarning("[NetworkManager] Only master can kick players!");
+            return;
+        }
+
+        if (player == PhotonNetwork.LocalPlayer)
+        {
+            Debug.LogWarning("[NetworkManager] Cannot kick yourself!");
+            return;
+        }
+
+        Debug.Log($"[NetworkManager] Kicking player: {player.NickName}");
+
+        photonView.RPC("RPC_KickPlayer", RpcTarget.All, player.ActorNumber);
+    }
+
+    [PunRPC]
+    void RPC_KickPlayer(int actorNumber)
+    {
+        Debug.Log($"[NetworkManager] RPC_KickPlayer called for actor {actorNumber}, my actor: {PhotonNetwork.LocalPlayer.ActorNumber}");
+
+        if (PhotonNetwork.LocalPlayer.ActorNumber == actorNumber)
+        {
+            Debug.Log("[NetworkManager] I'm being kicked! Leaving room...");
+            PhotonNetwork.LeaveRoom();
+        }
+    }
 }

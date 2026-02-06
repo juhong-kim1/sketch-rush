@@ -49,6 +49,7 @@ MonoBehaviour:
   - RPC_WrongFeedback
   - RPC_UpdateScore
   - RPC_SyncDrawing
+  - RPC_KickPlayer
   DisableAutoOpenWizard: 1
   ShowSettings: 0
   DevRegionSetOnce: 1

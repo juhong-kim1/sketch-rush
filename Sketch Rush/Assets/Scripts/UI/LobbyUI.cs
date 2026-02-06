@@ -220,8 +220,28 @@ public class LobbyUI : MonoBehaviourPunCallbacks
                 playerName += " ✓";
 
             text.text = playerName;
+            
+            Button kickButton = item.GetComponentInChildren<Button>();
+            if (kickButton != null)
+            {
+                bool canKick = PhotonNetwork.IsMasterClient && player != PhotonNetwork.LocalPlayer;
+                kickButton.gameObject.SetActive(canKick);
+
+                if (canKick)
+                {
+                    Player targetPlayer = player;
+                    kickButton.onClick.RemoveAllListeners();
+                    kickButton.onClick.AddListener(() => OnKickPlayer(targetPlayer));
+                }
+            }
+
             playerListItems.Add(item);
         }
+    }
+    private void OnKickPlayer(Player player)
+    {
+        Debug.Log($"[LobbyUI] Kicking player: {player.NickName}");
+        networkManager.KickPlayer(player);
     }
 
     private void ClearPlayerList()
