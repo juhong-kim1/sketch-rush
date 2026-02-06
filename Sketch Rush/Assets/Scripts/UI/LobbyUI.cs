@@ -27,6 +27,8 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     [SerializeField] private Button startButton;
     [SerializeField] private Button leaveButton;
 
+    private bool isReady = false;
+
     [Header("Prefabs")]
     [SerializeField] private GameObject playerListItemPrefab;
 
@@ -36,6 +38,13 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     void Awake()
     {
         networkManager = FindAnyObjectByType<NetworkManager>();
+
+        GameEventSystem.Subscribe("OnPlayerReadyChanged", OnPlayerReadyChanged);
+    }
+
+    private void OnDestroy()
+    {
+        GameEventSystem.Unsubscribe("OnPlayerReadyChanged", OnPlayerReadyChanged);
     }
 
     void Start()
@@ -55,6 +64,18 @@ public class LobbyUI : MonoBehaviourPunCallbacks
             // Room Panel 표시
             ShowPanel("Room");
             roomNameText.text = $"Room: {PhotonNetwork.CurrentRoom.Name}";
+
+            if (PhotonNetwork.IsMasterClient)
+            {
+                isReady = true;
+                networkManager.SetPlayerReady(true);
+            }
+            else
+            {
+                isReady = false;
+                networkManager.SetPlayerReady(false);
+            }
+
             UpdatePlayerList();
             UpdateStartButton();
         }
@@ -68,7 +89,8 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         confirmButton.onClick.AddListener(OnConfirmNickname);
         createRoomButton.onClick.AddListener(OnCreateRoom);
         joinRandomButton.onClick.AddListener(OnJoinRandom);
-        startButton.onClick.AddListener(OnStartGame);
+        startButton.onClick.RemoveAllListeners();
+        startButton.onClick.AddListener(OnStartOrReadyClick);
         leaveButton.onClick.AddListener(OnLeaveRoom);
 
         // 초기 패널
@@ -78,6 +100,9 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     // ===== 패널 전환 =====
     private void ShowPanel(string panel)
     {
+        if (nicknamePanel == null || lobbyPanel == null || roomPanel == null)
+            return;
+
         nicknamePanel.SetActive(panel == "Nickname");
         lobbyPanel.SetActive(panel == "Lobby");
         roomPanel.SetActive(panel == "Room");
@@ -124,12 +149,42 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     {
         ShowPanel("Room");
         roomNameText.text = $"Room: {PhotonNetwork.CurrentRoom.Name}";
+
+        // Ready 상태 초기화
+        if (PhotonNetwork.IsMasterClient)
+        {
+            isReady = true;
+            networkManager.SetPlayerReady(true);
+        }
+        else
+        {
+            isReady = false;
+            networkManager.SetPlayerReady(false);
+        }
+
         UpdatePlayerList();
+        UpdateStartButton();
+    }
+
+    private void OnPlayerReadyChanged(object data)
+    {
+        UpdatePlayerList();
+        UpdateStartButton();
+    }
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        // Ready 상태 초기화
+        isReady = false;
+        networkManager.SetPlayerReady(false);
+
         UpdateStartButton();
     }
 
     public override void OnLeftRoom()
     {
+        if (this == null || !gameObject.activeInHierarchy)
+            return;
+
         ShowPanel("Lobby");
         ClearPlayerList();
     }
@@ -146,11 +201,6 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         UpdateStartButton();
     }
 
-    public override void OnMasterClientSwitched(Player newMasterClient)
-    {
-        UpdateStartButton();
-    }
-
     // ===== 플레이어 리스트 =====
     private void UpdatePlayerList()
     {
@@ -160,11 +210,15 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         {
             GameObject item = Instantiate(playerListItemPrefab, playerListContent);
             TextMeshProUGUI text = item.GetComponentInChildren<TextMeshProUGUI>();
-            
+
             string playerName = player.NickName;
             if (player.IsMasterClient)
                 playerName += " (Host)";
-            
+
+            bool isPlayerReady = networkManager.GetPlayerReady(player);
+            if (isPlayerReady)
+                playerName += " ✓";
+
             text.text = playerName;
             playerListItems.Add(item);
         }
@@ -179,9 +233,45 @@ public class LobbyUI : MonoBehaviourPunCallbacks
 
     private void UpdateStartButton()
     {
-        // 마스터만 Start 버튼 활성화 + 3명 이상
-        bool canStart = PhotonNetwork.IsMasterClient && 
-                        PhotonNetwork.CurrentRoom.PlayerCount >= 1;
-        startButton.interactable = canStart;
+        if (PhotonNetwork.IsMasterClient)
+        {
+            // 호스트: Start 버튼
+            var buttonText = startButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (buttonText != null)
+            {
+                buttonText.text = "게임 시작";
+            }
+
+            // 모든 플레이어 Ready면 활성화
+            bool allReady = networkManager.AreAllPlayersReady();
+            startButton.interactable = allReady && PhotonNetwork.CurrentRoom.PlayerCount >= 1;
+            startButton.GetComponent<Image>().color = allReady ? Color.green : Color.white;
+        }
+        else
+        {
+            // 클라이언트: Ready 버튼
+            var buttonText = startButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (buttonText != null)
+            {
+                buttonText.text = isReady ? "준비 취소" : "준비";
+            }
+
+            startButton.interactable = true;
+            startButton.GetComponent<Image>().color = isReady ? Color.green : Color.white;
+        }
+    }
+
+    private void OnStartOrReadyClick()
+    {
+        if (PhotonNetwork.IsMasterClient)
+        {
+            networkManager.StartGame();
+        }
+        else
+        {
+            isReady = !isReady;
+            networkManager.SetPlayerReady(isReady);
+            UpdateStartButton();
+        }
     }
 }

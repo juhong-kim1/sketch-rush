@@ -131,12 +131,59 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         }
 
         Debug.Log("[NetworkManager] Starting game...");
-        PhotonNetwork.CurrentRoom.IsOpen = false; // 방 닫기
-        PhotonNetwork.LoadLevel("MainScene"); // 모두 게임씬으로
+
+        PhotonNetwork.CurrentRoom.IsOpen = false;
+        PhotonNetwork.AutomaticallySyncScene = true;
+        PhotonNetwork.LoadLevel("MainScene");
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
         Debug.LogWarning($"[NetworkManager] Disconnected: {cause}");
+    }
+
+    public void SetPlayerReady(bool isReady)
+    {
+        // Custom Properties에 저장
+        ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable
+    {
+        { "IsReady", isReady }
+    };
+        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+
+        Debug.Log($"[NetworkManager] Set ready: {isReady}");
+    }
+
+    public bool GetPlayerReady(Player player)
+    {
+        if (player.CustomProperties.ContainsKey("IsReady"))
+        {
+            return (bool)player.CustomProperties["IsReady"];
+        }
+        return false;
+    }
+
+    public bool AreAllPlayersReady()
+    {
+        foreach (Player player in PhotonNetwork.PlayerList)
+        {
+            if (player.IsMasterClient)
+                continue;
+
+            if (!GetPlayerReady(player))
+                return false;
+        }
+        return true;
+    }
+
+    // Custom Properties 변경 시 콜백
+    public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
+    {
+        if (changedProps.ContainsKey("IsReady"))
+        {
+            Debug.Log($"[NetworkManager] {targetPlayer.NickName} ready status changed");
+            // LobbyUI에게 알림
+            GameEventSystem.Publish("OnPlayerReadyChanged", targetPlayer);
+        }
     }
 }

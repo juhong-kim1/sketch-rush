@@ -326,17 +326,94 @@ private string SelectRandomWord()
         Debug.Log($"[GameNetworkManager] Result: winner={winnerActorNumber}, target={targetActorNumber}, correct={wasCorrect}");
 
         gameManager.ShowQuizResult(targetActorNumber, correctAnswer, wasCorrect, winnerActorNumber, points);
+
+        ShowRoundResult(winnerActorNumber, targetActorNumber, wasCorrect);
+    }
+
+    void ShowRoundResult(int winnerActorNumber, int targetActorNumber, bool wasCorrect)
+    {
+        RoundResultData resultData = new RoundResultData();
+
+        // 타겟의 그림 가져오기
+        if (playerDataDict.ContainsKey(targetActorNumber))
+        {
+            var targetData = playerDataDict[targetActorNumber];
+            string currentWord = gameManager.CurrentQuizAnswer;
+
+            if (targetData.drawings.ContainsKey(currentWord))
+            {
+                resultData.targetDrawing = targetData.drawings[currentWord];
+            }
+        }
+
+        // 결과 메시지 및 Winner 그림
+        if (wasCorrect && winnerActorNumber == targetActorNumber)
+        {
+            // 케이스 1: 타겟이 맞춤
+            string targetName = GetPlayerName(targetActorNumber);
+            resultData.message = $"{targetName}님이 맞췄습니다!";
+            resultData.winnerDrawing = null; // 타겟 그림만 표시
+        }
+        else if (wasCorrect && winnerActorNumber != targetActorNumber)
+        {
+            // 케이스 2: 다른 사람이 맞춤
+            string targetName = GetPlayerName(targetActorNumber);
+            string winnerName = GetPlayerName(winnerActorNumber);
+            resultData.message = $"{winnerName}님이 맞췄습니다!\n{targetName}님은 틀렸습니다.";
+
+            // 맞춘 사람의 그림도 가져오기
+            if (playerDataDict.ContainsKey(winnerActorNumber))
+            {
+                var winnerData = playerDataDict[winnerActorNumber];
+                string currentWord = gameManager.CurrentQuizAnswer;
+
+                if (winnerData.drawings.ContainsKey(currentWord))
+                {
+                    resultData.winnerDrawing = winnerData.drawings[currentWord];
+                }
+            }
+        }
+        else
+        {
+            // 케이스 3: 아무도 못 맞춤
+            string targetName = GetPlayerName(targetActorNumber);
+            resultData.message = $"시간 초과!\n정답: {gameManager.CurrentQuizAnswer}";
+            resultData.winnerDrawing = null;
+        }
+
+        GameEventSystem.Publish("OnRoundResult", resultData);
+    }
+
+    string GetPlayerName(int actorNumber)
+    {
+        if (playerDataDict.ContainsKey(actorNumber))
+        {
+            return playerDataDict[actorNumber].nickname;
+        }
+        return $"Player{actorNumber}";
     }
 
     [PunRPC]
     void RPC_EndGame()
     {
-        Debug.Log("[GameNetworkManager] Game End!");
-        
-        // 최종 점수 계산
+        Debug.Log("[NetworkGameManager] Game End!");
+
         var sortedPlayers = playerDataDict.Values.OrderByDescending(p => p.score).ToList();
-        
         gameManager.EndGame(sortedPlayers);
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            Invoke(nameof(AutoReturnToLobby), 10f);
+        }
+    }
+
+    public void AutoReturnToLobby()
+    {
+        if (PhotonNetwork.IsMasterClient)
+        {
+            Debug.Log("[NetworkGameManager] Auto returning to lobby...");
+            PhotonNetwork.LoadLevel("LobbyScene");
+        }
     }
 
     // ===== 플레이어 데이터 접근 =====
@@ -348,6 +425,17 @@ private string SelectRandomWord()
     public PlayerData GetPlayerData(int actorNumber)
     {
         return playerDataDict.ContainsKey(actorNumber) ? playerDataDict[actorNumber] : null;
+    }
+
+    public void SavePlayerDrawing(string word, byte[] pngData)
+    {
+        int myActorNumber = PhotonNetwork.LocalPlayer.ActorNumber;
+
+        if (playerDataDict.ContainsKey(myActorNumber))
+        {
+            playerDataDict[myActorNumber].drawings[word] = pngData;
+            Debug.Log($"[NetworkGameManager] Saved drawing for word: {word}, size: {pngData.Length} bytes");
+        }
     }
 }
 

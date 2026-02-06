@@ -164,13 +164,16 @@ void Start()
     private void SaveCurrentDrawing()
     {
         if (drawingCanvas == null || currentWord == null) return;
-        
+
         Texture2D original = drawingCanvas.GetTexture();
         Texture2D copy = new Texture2D(original.width, original.height);
         copy.SetPixels(original.GetPixels());
         copy.Apply();
         drawnImages[currentWord] = copy;
-        
+
+        byte[] pngData = drawingCanvas.GetPNG();
+        networkManager.SavePlayerDrawing(currentWord, pngData);
+
         Debug.Log($"[GameManager] Saved: {currentWord}");
     }
 
@@ -353,8 +356,14 @@ public void CheckAnswer(string playerAnswer)
 
     public void ReturnToRoom()
     {
-        // 각자 개인적으로 로비로 돌아가기 (다른 플레이어는 영향 없음)
-        UnityEngine.SceneManagement.SceneManager.LoadScene("LobbyScene");
+        if (PhotonNetwork.IsMasterClient)
+        {
+            networkManager.CancelInvoke(nameof(networkManager.AutoReturnToLobby));
+
+            PhotonNetwork.LoadLevel("LobbyScene");
+        }
+
+        StartCoroutine(CountdownToLobby());
     }
 
     private string GetPlayerName(int actorNumber)
@@ -362,4 +371,22 @@ public void CheckAnswer(string playerAnswer)
         var playerData = networkManager.GetPlayerData(actorNumber);
         return playerData != null ? playerData.nickname : $"Player{actorNumber}";
     }
+
+    IEnumerator CountdownToLobby()
+    {
+        for (int i = 10; i > 0; i--)
+        {
+            // TODO: UI에 카운트다운 텍스트 표시
+            // countdownText.text = $"Returning in {i}...";
+            yield return new WaitForSeconds(1f);
+        }
+    }
+}
+
+[System.Serializable]
+public class RoundResultData
+{
+    public string message;
+    public byte[] targetDrawing;
+    public byte[] winnerDrawing; // null일 수도 있음
 }

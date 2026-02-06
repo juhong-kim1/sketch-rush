@@ -1,8 +1,8 @@
-using UnityEngine;
+using Photon.Pun;
 using System.Collections;
-
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// UI 관리 (단일 책임 - UI만 담당)
@@ -16,6 +16,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject drawingPanel;
     [SerializeField] private GameObject quizPanel;
     [SerializeField] private GameObject endPanel;
+
 
     [Header("Drawing UI")]
     [SerializeField] private TextMeshProUGUI wordText;
@@ -33,9 +34,15 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI phaseText;
     [SerializeField] private TextMeshProUGUI feedbackText;
 
+    [Header("Result UI")]
+    [SerializeField] private GameObject resultPanel;
+    [SerializeField] private TextMeshProUGUI resultText;
+    [SerializeField] private RawImage targetDrawingImage;
+    [SerializeField] private RawImage winnerDrawingImage;
 
     [Header("End UI")]
     [SerializeField] private TextMeshProUGUI endScoreText;
+    [SerializeField] private TextMeshProUGUI countdownText;
 
     [Header("Buttons")]
     [SerializeField] private Button restartButton;
@@ -57,6 +64,7 @@ public class UIManager : MonoBehaviour
         GameEventSystem.Subscribe("OnQuizProgress", OnQuizProgress);
         GameEventSystem.Subscribe("OnQuizTurn", OnQuizTurn);
         GameEventSystem.Subscribe("OnQuizResult", OnQuizResult);
+        GameEventSystem.Subscribe("OnRoundResult", OnRoundResult);
     }
 
     void OnDestroy()
@@ -72,6 +80,7 @@ public class UIManager : MonoBehaviour
         GameEventSystem.Unsubscribe("OnQuizProgress", OnQuizProgress);
         GameEventSystem.Unsubscribe("OnQuizTurn", OnQuizTurn);
         GameEventSystem.Unsubscribe("OnQuizResult", OnQuizResult);
+        GameEventSystem.Unsubscribe("OnRoundResult", OnRoundResult);
     }
 
 void Start()
@@ -149,6 +158,48 @@ private void ShowPanel(string state)
     {
         string leaderboard = (string)data;
         endScoreText.text = leaderboard;
+
+        // 호스트만 버튼 활성화
+        if (restartButton != null)
+        {
+            restartButton.interactable = PhotonNetwork.IsMasterClient;
+
+            var buttonText = restartButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (buttonText != null)
+            {
+                buttonText.text = PhotonNetwork.IsMasterClient ?
+                    "방으로" :
+                    "방으로";
+            }
+        }
+
+        // 카운트다운 시작
+        StartCoroutine(CountdownToLobby());
+    }
+
+    IEnumerator CountdownToLobby()
+    {
+        for (int i = 10; i > 0; i--)
+        {
+            if (countdownText != null)
+            {
+                countdownText.text = $"{i}초 후 방으로...";
+
+                // 3초 이하면 빨간색
+                if (i <= 3)
+                    countdownText.color = Color.red;
+                else
+                    countdownText.color = Color.white;
+            }
+
+            yield return new WaitForSeconds(1f);
+        }
+
+        // 카운트다운 끝
+        if (countdownText != null)
+        {
+            countdownText.text = "방으로...";
+        }
     }
 
     // ===== Quiz 이벤트 =====
@@ -239,5 +290,45 @@ public void ShowFeedback(string message, bool isCorrect)
         {
             feedbackText.text = "";
         }
+    }
+
+    private void OnRoundResult(object data)
+    {
+        RoundResultData resultData = (RoundResultData)data;
+
+        // Result Panel 활성화
+        resultPanel.SetActive(true);
+
+        // 결과 텍스트
+        resultText.text = resultData.message;
+
+        // 타겟 그림 표시
+        if (resultData.targetDrawing != null)
+        {
+            Texture2D tex = new Texture2D(2, 2);
+            tex.LoadImage(resultData.targetDrawing);
+            targetDrawingImage.texture = tex;
+            targetDrawingImage.gameObject.SetActive(true);
+        }
+
+        if (resultData.winnerDrawing != null)
+        {
+            Texture2D tex = new Texture2D(2, 2);
+            tex.LoadImage(resultData.winnerDrawing);
+            winnerDrawingImage.texture = tex;
+            winnerDrawingImage.gameObject.SetActive(true);
+        }
+        else
+        {
+            winnerDrawingImage.gameObject.SetActive(false);
+        }
+
+        StartCoroutine(HideResultPanelAfterDelay(5f));
+    }
+
+    IEnumerator HideResultPanelAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        resultPanel.SetActive(false);
     }
 }
