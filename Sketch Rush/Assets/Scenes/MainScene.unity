@@ -2615,7 +2615,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &961348158
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4669,10 +4669,10 @@ MonoBehaviour:
   quizTurnText: {fileID: 1003566784}
   phaseText: {fileID: 0}
   feedbackText: {fileID: 0}
-  resultPanel: {fileID: 0}
-  resultText: {fileID: 0}
-  targetDrawingImage: {fileID: 0}
-  winnerDrawingImage: {fileID: 0}
+  resultPanel: {fileID: 961348157}
+  resultText: {fileID: 898233861}
+  targetDrawingImage: {fileID: 978393725}
+  winnerDrawingImage: {fileID: 133379046}
   endScoreText: {fileID: 1422218909}
   countdownText: {fileID: 476852354}
   restartButton: {fileID: 933147144}

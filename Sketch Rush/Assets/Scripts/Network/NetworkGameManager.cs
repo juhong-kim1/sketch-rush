@@ -200,7 +200,7 @@ private string SelectRandomWord()
                 true,
                 points);
 
-            Invoke(nameof(NextQuizRound), 1.5f);
+            Invoke(nameof(NextQuizRound), 5f);
         }
         else
         {
@@ -273,7 +273,7 @@ private string SelectRandomWord()
                 0);
 
             isWaitingForAnswer = false;
-            Invoke(nameof(NextQuizRound), 1.5f);
+            Invoke(nameof(NextQuizRound), 5f);
         }
     }
 

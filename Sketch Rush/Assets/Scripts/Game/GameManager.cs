@@ -225,22 +225,28 @@ public void UpdateQuiz()
         
         timeLeft -= Time.deltaTime;
         GameEventSystem.Publish("OnTimerUpdate", timeLeft);
-        
-        // 타임아웃 처리
+
+        //// 타임아웃 처리
+        //if (timeLeft <= 0)
+        //{
+        //    IsActive = false;
+
+        //    if (currentPhase == QuizPhase.TargetTurn)
+        //    {
+        //        // Phase 1 시간 초과 -> Phase 2로 전환
+        //        StartPhase2();
+        //    }
+        //    else
+        //    {
+        //        // Phase 2 시간 초과 -> 다음 라운드
+        //        Debug.Log("[GameManager] Phase 2 timeout - nobody got it");
+        //    }
+        //}
+
         if (timeLeft <= 0)
         {
-            IsActive = false;
-            
-            if (currentPhase == QuizPhase.TargetTurn)
-            {
-                // Phase 1 시간 초과 -> Phase 2로 전환
-                StartPhase2();
-            }
-            else
-            {
-                // Phase 2 시간 초과 -> 다음 라운드
-                Debug.Log("[GameManager] Phase 2 timeout - nobody got it");
-            }
+            timeLeft = 0;
+            GameEventSystem.Publish("OnTimerUpdate", 0);
         }
     }
 
