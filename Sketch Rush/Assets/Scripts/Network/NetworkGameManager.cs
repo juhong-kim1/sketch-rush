@@ -240,6 +240,14 @@ private string SelectRandomWord()
         if (!PhotonNetwork.IsMasterClient) return;
         if (!isWaitingForAnswer) return;
 
+        VoiceRecognizer voiceRecognizer = FindAnyObjectByType<VoiceRecognizer>();
+        if (voiceRecognizer != null && voiceRecognizer.IsProcessing)
+        {
+            Debug.Log("[NetworkGameManager] Waiting for voice recognition... Retrying in 1s");
+            Invoke(nameof(QuizTimeOut), 1f);
+            return;
+        }
+
         Debug.Log("[GameNetworkManager] QuizTimeOut called");
         
         // Phase 체크: GameManager에서 확인

@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private AIWordGenerator wordGenerator;
     [SerializeField] private DrawingCanvas drawingCanvas;
     [SerializeField] private GameNetworkManager networkManager;
+    [SerializeField] private VoiceRecognizer voiceRecognizer;
 
     [Header("Game Settings")]
     [SerializeField] private float drawingTime = 5f;
@@ -48,9 +49,24 @@ public class GameManager : MonoBehaviour
     {
         if (networkManager == null)
             networkManager = FindAnyObjectByType<GameNetworkManager>();
+
+        if (voiceRecognizer != null)
+        {
+            voiceRecognizer.OnRecognized += OnVoiceRecognized;
+            voiceRecognizer.OnError += OnVoiceError;
+        }
     }
 
-void Start()
+    private void OnDestroy()
+    {
+        if (voiceRecognizer != null)
+        {
+            voiceRecognizer.OnRecognized -= OnVoiceRecognized;
+            voiceRecognizer.OnError -= OnVoiceError;
+        }
+    }
+
+    void Start()
     {
         // 로비에서 Start 버튼 누르고 온 거니까 바로 Loading
         if (PhotonNetwork.IsMasterClient)
@@ -222,29 +238,21 @@ public void StartQuizRound(int roundIndex, int targetActorNumber, bool myTurn, s
 public void UpdateQuiz()
     {
         if (!IsActive) return;
-        
+
         timeLeft -= Time.deltaTime;
         GameEventSystem.Publish("OnTimerUpdate", timeLeft);
 
-        //// 타임아웃 처리
-        //if (timeLeft <= 0)
-        //{
-        //    IsActive = false;
-
-        //    if (currentPhase == QuizPhase.TargetTurn)
-        //    {
-        //        // Phase 1 시간 초과 -> Phase 2로 전환
-        //        StartPhase2();
-        //    }
-        //    else
-        //    {
-        //        // Phase 2 시간 초과 -> 다음 라운드
-        //        Debug.Log("[GameManager] Phase 2 timeout - nobody got it");
-        //    }
-        //}
-
         if (timeLeft <= 0)
         {
+            VoiceRecognizer voiceRecognizer = FindAnyObjectByType<VoiceRecognizer>();
+            if (voiceRecognizer != null && voiceRecognizer.IsProcessing)
+            {
+                Debug.Log("[GameManager] Waiting for voice recognition...");
+                timeLeft = 0;
+                GameEventSystem.Publish("OnTimerUpdate", 0);
+                return;
+            }
+
             timeLeft = 0;
             GameEventSystem.Publish("OnTimerUpdate", 0);
         }
@@ -386,6 +394,22 @@ public void CheckAnswer(string playerAnswer)
             // countdownText.text = $"Returning in {i}...";
             yield return new WaitForSeconds(1f);
         }
+    }
+
+    void OnVoiceRecognized(string recognizedText)
+    {
+        Debug.Log($"[GameManager] Voice recognized: {recognizedText}");
+
+        if (currentState is QuizState)
+        {
+            CheckAnswer(recognizedText);
+        }
+    }
+
+    void OnVoiceError(string errorMessage)
+    {
+        Debug.LogWarning($"[GameManager] Voice error: {errorMessage}");
+        GameEventSystem.Publish("OnVoiceError", errorMessage);
     }
 }
 

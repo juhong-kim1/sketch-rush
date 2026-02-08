@@ -1,4 +1,5 @@
 using Photon.Pun;
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -11,7 +12,6 @@ using UnityEngine.UI;
 public class UIManager : MonoBehaviour
 {
     [Header("Panels")]
-    
     [SerializeField] private GameObject loadingPanel;
     [SerializeField] private GameObject drawingPanel;
     [SerializeField] private GameObject quizPanel;
@@ -30,6 +30,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI quizFeedbackText;
     [SerializeField] private TextMeshProUGUI quizProgressText;
     [SerializeField] private Button submitButton;
+    [SerializeField] private Button voiceMicButton;
     [SerializeField] private TextMeshProUGUI quizTurnText;
     [SerializeField] private TextMeshProUGUI phaseText;
     [SerializeField] private TextMeshProUGUI feedbackText;
@@ -48,10 +49,13 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button restartButton;
 
     private GameManager gameManager;
+    private VoiceRecognizer voiceRecognizer;
+    private bool isVoiceRecording = false;
 
     void Awake()
     {
         gameManager = FindAnyObjectByType<GameManager>();
+        voiceRecognizer = FindAnyObjectByType<VoiceRecognizer>();
 
         GameEventSystem.Subscribe("OnStateChanged", OnStateChanged);
         GameEventSystem.Subscribe("OnWordChanged", OnWordChanged);
@@ -65,6 +69,7 @@ public class UIManager : MonoBehaviour
         GameEventSystem.Subscribe("OnQuizTurn", OnQuizTurn);
         GameEventSystem.Subscribe("OnQuizResult", OnQuizResult);
         GameEventSystem.Subscribe("OnRoundResult", OnRoundResult);
+        GameEventSystem.Subscribe("OnVoiceError", OnVoiceError);
     }
 
     void OnDestroy()
@@ -81,12 +86,27 @@ public class UIManager : MonoBehaviour
         GameEventSystem.Unsubscribe("OnQuizTurn", OnQuizTurn);
         GameEventSystem.Unsubscribe("OnQuizResult", OnQuizResult);
         GameEventSystem.Unsubscribe("OnRoundResult", OnRoundResult);
+        GameEventSystem.Unsubscribe("OnVoiceError", OnVoiceError);
     }
 
 void Start()
     {
         submitButton.onClick.AddListener(OnSubmitClick);
         restartButton.onClick.AddListener(OnReturnToRoomClick);
+
+        var trigger = voiceMicButton.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+
+        // 누를 때
+        var pointerDown = new UnityEngine.EventSystems.EventTrigger.Entry();
+        pointerDown.eventID = UnityEngine.EventSystems.EventTriggerType.PointerDown;
+        pointerDown.callback.AddListener((data) => { OnVoiceButtonDown(); });
+        trigger.triggers.Add(pointerDown);
+
+        // 뗄 때
+        var pointerUp = new UnityEngine.EventSystems.EventTrigger.Entry();
+        pointerUp.eventID = UnityEngine.EventSystems.EventTriggerType.PointerUp;
+        pointerUp.callback.AddListener((data) => { OnVoiceButtonUp(); });
+        trigger.triggers.Add(pointerUp);
     }
 
     // ===== Panel 전환 =====
@@ -120,17 +140,16 @@ private void ShowPanel(string state)
 
     private void OnTimerUpdate(object data)
     {
-        float timeLeft = (float)data;
+        float time = Convert.ToSingle(data);
 
-        if (drawingPanel.activeSelf)
+        int seconds = Mathf.CeilToInt(time);
+        if (timerText != null && timerText.gameObject.activeInHierarchy)
         {
-            timerText.text = timeLeft.ToString("F1") + "s";
-            timerText.color = timeLeft <= 3f ? Color.red : Color.white;
+            timerText.text = $"Time: {seconds}s";
         }
-        else if (quizPanel.activeSelf)
+        if (quizTimerText != null && quizTimerText.gameObject.activeInHierarchy)
         {
-            quizTimerText.text = timeLeft.ToString("F1") + "s";
-            quizTimerText.color = timeLeft <= 3f ? Color.red : Color.white;
+            quizTimerText.text = $"Time: {seconds}s";
         }
     }
 
@@ -330,5 +349,50 @@ public void ShowFeedback(string message, bool isCorrect)
     {
         yield return new WaitForSeconds(delay);
         resultPanel.SetActive(false);
+    }
+
+    void OnVoiceButtonDown()
+    {
+        if (voiceRecognizer != null && !isVoiceRecording)
+        {
+            isVoiceRecording = true;
+            voiceRecognizer.StartRecording();
+
+            // UI 피드백
+            if (voiceMicButton != null)
+            {
+                voiceMicButton.GetComponent<UnityEngine.UI.Image>().color = Color.red;
+            }
+
+            Debug.Log("[UIManager] Voice recording started");
+        }
+    }
+
+    void OnVoiceButtonUp()
+    {
+        if (voiceRecognizer != null && isVoiceRecording)
+        {
+            isVoiceRecording = false;
+            voiceRecognizer.StopRecordingAndRecognize();
+
+            // UI 피드백
+            if (voiceMicButton != null)
+            {
+                voiceMicButton.GetComponent<UnityEngine.UI.Image>().color = Color.white;
+            }
+
+            Debug.Log("[UIManager] Voice recording stopped");
+        }
+    }
+
+    void OnVoiceError(object data)
+    {
+        string errorMessage = (string)data;
+
+        if (quizFeedbackText != null)
+        {
+            quizFeedbackText.text = errorMessage;
+            quizFeedbackText.color = Color.yellow;
+        }
     }
 }
