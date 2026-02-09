@@ -30,6 +30,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
 
     [Header("GameStart Panel")]
     [SerializeField] private Button gameStartButton;
+    [SerializeField] private Button gameEndButton;
 
     private bool isReady = false;
 
@@ -87,6 +88,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         ShowPanel("GameStart");
     }
 
+    gameEndButton.onClick.AddListener(OnGameEnd);
     gameStartButton.onClick.AddListener(OnGameStart);
     confirmButton.onClick.AddListener(OnConfirmNickname);
     createRoomButton.onClick.AddListener(OnCreateRoom);
@@ -105,6 +107,19 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         
         // Nickname Panel로 전환
         ShowPanel("Nickname");
+    }
+
+    private void OnGameEnd()
+    {
+        Debug.Log("[LobbyUI] Game End clicked");
+
+        // 바로 종료 (Photon 연결 전)
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+
     }
 
     // ===== 패널 전환 =====
