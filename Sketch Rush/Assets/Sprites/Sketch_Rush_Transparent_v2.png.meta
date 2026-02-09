@@ -1,0 +1,403 @@
+fileFormatVersion: 2
+guid: cd4fbf1a19f4b6343b780e4535de63c5
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -4946698804498343218
+    second: Sketch_Rush_Transparent_v2_0
+  - first:
+      213: 1308079977750866127
+    second: Sketch_Rush_Transparent_v2_1
+  - first:
+      213: 4638669007333595976
+    second: Sketch_Rush_Transparent_v2_2
+  - first:
+      213: -3387074256898673091
+    second: Sketch_Rush_Transparent_v2_3
+  - first:
+      213: -7059677871415259601
+    second: Sketch_Rush_Transparent_v2_4
+  - first:
+      213: -429054373996110399
+    second: Sketch_Rush_Transparent_v2_5
+  - first:
+      213: 5811167873332456067
+    second: Sketch_Rush_Transparent_v2_6
+  - first:
+      213: -4844078918374456590
+    second: Sketch_Rush_Transparent_v2_7
+  - first:
+      213: -5669163612115725426
+    second: Sketch_Rush_Transparent_v2_8
+  - first:
+      213: -4951369902047226002
+    second: Sketch_Rush_Transparent_v2_9
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Sketch_Rush_Transparent_v2_0
+      rect:
+        serializedVersion: 2
+        x: 368
+        y: 388
+        width: 93
+        height: 128
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ecad60365abc95bb0800000000000000
+      internalID: -4946698804498343218
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sketch_Rush_Transparent_v2_1
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 389
+        width: 104
+        height: 126
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc824ab2fcb372210800000000000000
+      internalID: 1308079977750866127
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sketch_Rush_Transparent_v2_2
+      rect:
+        serializedVersion: 2
+        x: 577
+        y: 389
+        width: 90
+        height: 125
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 84b9bbca2ecdf5040800000000000000
+      internalID: 4638669007333595976
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sketch_Rush_Transparent_v2_3
+      rect:
+        serializedVersion: 2
+        x: 673
+        y: 390
+        width: 96
+        height: 125
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d363fa9a8e1bef0d0800000000000000
+      internalID: -3387074256898673091
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sketch_Rush_Transparent_v2_4
+      rect:
+        serializedVersion: 2
+        x: 765
+        y: 388
+        width: 106
+        height: 128
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f2e8b95316cf60e90800000000000000
+      internalID: -7059677871415259601
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sketch_Rush_Transparent_v2_5
+      rect:
+        serializedVersion: 2
+        x: 877
+        y: 389
+        width: 99
+        height: 126
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1cd52a0f151bb0af0800000000000000
+      internalID: -429054373996110399
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sketch_Rush_Transparent_v2_6
+      rect:
+        serializedVersion: 2
+        x: 466
+        y: 252
+        width: 102
+        height: 126
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38aa424546a65a050800000000000000
+      internalID: 5811167873332456067
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sketch_Rush_Transparent_v2_7
+      rect:
+        serializedVersion: 2
+        x: 569
+        y: 251
+        width: 103
+        height: 127
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f2055683ef56ccb0800000000000000
+      internalID: -4844078918374456590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sketch_Rush_Transparent_v2_8
+      rect:
+        serializedVersion: 2
+        x: 676
+        y: 251
+        width: 94
+        height: 128
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e8395463bb51351b0800000000000000
+      internalID: -5669163612115725426
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sketch_Rush_Transparent_v2_9
+      rect:
+        serializedVersion: 2
+        x: 777
+        y: 252
+        width: 101
+        height: 126
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e671aecbe43394bb0800000000000000
+      internalID: -4951369902047226002
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Sketch_Rush_Transparent_v2_0: -4946698804498343218
+      Sketch_Rush_Transparent_v2_1: 1308079977750866127
+      Sketch_Rush_Transparent_v2_2: 4638669007333595976
+      Sketch_Rush_Transparent_v2_3: -3387074256898673091
+      Sketch_Rush_Transparent_v2_4: -7059677871415259601
+      Sketch_Rush_Transparent_v2_5: -429054373996110399
+      Sketch_Rush_Transparent_v2_6: 5811167873332456067
+      Sketch_Rush_Transparent_v2_7: -4844078918374456590
+      Sketch_Rush_Transparent_v2_8: -5669163612115725426
+      Sketch_Rush_Transparent_v2_9: -4951369902047226002
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -11,6 +11,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     [SerializeField] private GameObject nicknamePanel;
     [SerializeField] private GameObject lobbyPanel;
     [SerializeField] private GameObject roomPanel;
+    [SerializeField] private GameObject gameStartPanel;
 
     [Header("Nickname Panel")]
     [SerializeField] private TMP_InputField nicknameInput;
@@ -26,6 +27,9 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     [SerializeField] private Transform playerListContent;
     [SerializeField] private Button startButton;
     [SerializeField] private Button leaveButton;
+
+    [Header("GameStart Panel")]
+    [SerializeField] private Button gameStartButton;
 
     private bool isReady = false;
 
@@ -48,53 +52,59 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     }
 
     void Start()
+{
+    if (PhotonNetwork.InRoom)
     {
-        if (PhotonNetwork.InRoom)
+        // AutomaticallySyncScene 설정
+        if (!PhotonNetwork.IsMasterClient)
         {
-            // AutomaticallySyncScene 설정
-            if (!PhotonNetwork.IsMasterClient)
-            {
-                PhotonNetwork.AutomaticallySyncScene = false;
-            }
-            else
-            {
-                PhotonNetwork.AutomaticallySyncScene = true;
-            }
-
-            // Room Panel 표시
-            ShowPanel("Room");
-            roomNameText.text = $"Room: {PhotonNetwork.CurrentRoom.Name}";
-
-            if (PhotonNetwork.IsMasterClient)
-            {
-                isReady = true;
-                networkManager.SetPlayerReady(true);
-            }
-            else
-            {
-                isReady = false;
-                networkManager.SetPlayerReady(false);
-            }
-
-            UpdatePlayerList();
-            UpdateStartButton();
+            PhotonNetwork.AutomaticallySyncScene = false;
         }
         else
         {
-            // Nickname Panel 표시
-            ShowPanel("Nickname");
+            PhotonNetwork.AutomaticallySyncScene = true;
         }
 
-        // 버튼 리스너
-        confirmButton.onClick.AddListener(OnConfirmNickname);
-        createRoomButton.onClick.AddListener(OnCreateRoom);
-        joinRandomButton.onClick.AddListener(OnJoinRandom);
-        startButton.onClick.RemoveAllListeners();
-        startButton.onClick.AddListener(OnStartOrReadyClick);
-        leaveButton.onClick.AddListener(OnLeaveRoom);
+        ShowPanel("Room");
+        roomNameText.text = $"Room: {PhotonNetwork.CurrentRoom.Name}";
 
-        // 초기 패널
-        //ShowPanel("Nickname");
+        if (PhotonNetwork.IsMasterClient)
+        {
+            isReady = true;
+            networkManager.SetPlayerReady(true);
+        }
+        else
+        {
+            isReady = false;
+            networkManager.SetPlayerReady(false);
+        }
+
+        UpdatePlayerList();
+        UpdateStartButton();
+    }
+    else
+    {
+        ShowPanel("GameStart");
+    }
+
+    gameStartButton.onClick.AddListener(OnGameStart);
+    confirmButton.onClick.AddListener(OnConfirmNickname);
+    createRoomButton.onClick.AddListener(OnCreateRoom);
+    joinRandomButton.onClick.AddListener(OnJoinRandom);
+    startButton.onClick.RemoveAllListeners();
+    startButton.onClick.AddListener(OnStartOrReadyClick);
+    leaveButton.onClick.AddListener(OnLeaveRoom);
+    }
+
+    private void OnGameStart()
+    {
+        Debug.Log("[LobbyUI] Game Start clicked");
+        
+        // Photon 연결 시작
+        networkManager.ConnectToPhoton();
+        
+        // Nickname Panel로 전환
+        ShowPanel("Nickname");
     }
 
     // ===== 패널 전환 =====
