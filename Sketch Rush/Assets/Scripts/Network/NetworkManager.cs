@@ -10,6 +10,8 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     private void Awake()
     {
+        PhotonNetwork.PhotonServerSettings.AppSettings.FixedRegion = "kr";
+    
         PhotonNetwork.AutomaticallySyncScene = true;
     }
 
