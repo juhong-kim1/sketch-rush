@@ -135,7 +135,7 @@ private void ShowPanel(string state)
 
     private void OnWordChanged(object data)
     {
-        wordText.text = (string)data;
+        wordText.text = $"{(string)data} 을(를) 그려주세요!";
     }
 
     private void OnTimerUpdate(object data)
@@ -145,7 +145,7 @@ private void ShowPanel(string state)
         int seconds = Mathf.CeilToInt(time);
         if (timerText != null && timerText.gameObject.activeInHierarchy)
         {
-            timerText.text = $"Time: {seconds}s";
+            timerText.text = $"{seconds} 초 뒤 다음단어";
         }
         if (quizTimerText != null && quizTimerText.gameObject.activeInHierarchy)
         {
