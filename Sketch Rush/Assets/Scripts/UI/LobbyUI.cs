@@ -67,7 +67,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         }
 
         ShowPanel("Room");
-        roomNameText.text = $"Room: {PhotonNetwork.CurrentRoom.Name}";
+        roomNameText.text = $"{PhotonNetwork.CurrentRoom.Name}";
 
         if (PhotonNetwork.IsMasterClient)
         {
@@ -173,7 +173,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         ShowPanel("Room");
-        roomNameText.text = $"Room: {PhotonNetwork.CurrentRoom.Name}";
+        roomNameText.text = $"{PhotonNetwork.CurrentRoom.Name}";
 
         // Ready 상태 초기화
         if (PhotonNetwork.IsMasterClient)
@@ -242,7 +242,8 @@ public class LobbyUI : MonoBehaviourPunCallbacks
 
             bool isPlayerReady = networkManager.GetPlayerReady(player);
             if (isPlayerReady)
-                playerName += " ✓";
+                //playerName += " ✓";
+                playerName += " 준비";
 
             text.text = playerName;
             
@@ -290,7 +291,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
             // 모든 플레이어 Ready면 활성화
             bool allReady = networkManager.AreAllPlayersReady();
             startButton.interactable = allReady && PhotonNetwork.CurrentRoom.PlayerCount >= 1;
-            startButton.GetComponent<Image>().color = allReady ? Color.green : Color.white;
+            //startButton.GetComponent<Image>().color = allReady ? Color.green : Color.white;
         }
         else
         {
@@ -302,7 +303,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
             }
 
             startButton.interactable = true;
-            startButton.GetComponent<Image>().color = isReady ? Color.green : Color.white;
+            //startButton.GetComponent<Image>().color = isReady ? Color.green : Color.white;
         }
     }
 
