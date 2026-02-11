@@ -205,12 +205,6 @@ private void ShowPanel(string state)
             if (countdownText != null)
             {
                 countdownText.text = $"{i}초 후 방으로...";
-
-                // 3초 이하면 빨간색
-                if (i <= 3)
-                    countdownText.color = Color.red;
-                else
-                    countdownText.color = Color.white;
             }
 
             yield return new WaitForSeconds(1f);

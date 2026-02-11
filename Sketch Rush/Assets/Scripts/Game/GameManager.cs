@@ -133,6 +133,11 @@ public class GameManager : MonoBehaviour
         NextDrawingWord();
         timeLeft = drawingTime;
         GameEventSystem.Publish("OnTimerUpdate", timeLeft);
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.StartTickTock();
+        }
     }
 
     public void UpdateDrawing()
@@ -173,6 +178,12 @@ public class GameManager : MonoBehaviour
             currentWord = wordQueue.Dequeue();
             GameEventSystem.Publish("OnWordChanged", currentWord);
             if (drawingCanvas != null) drawingCanvas.ClearCanvas();
+
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.PlayNextDrawingWord();
+            }
+
             Debug.Log($"[GameManager] Drawing: {currentWord}");
         }
     }
@@ -233,6 +244,11 @@ public void StartQuizRound(int roundIndex, int targetActorNumber, bool myTurn, s
 
         timeLeft = quizTime;
         GameEventSystem.Publish("OnTimerUpdate", timeLeft);
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.StartTickTock();
+        }
     }
 
 public void UpdateQuiz()
@@ -349,8 +365,10 @@ public void CheckAnswer(string playerAnswer)
 
         GameEventSystem.Publish("OnQuizResult", resultText);
 
-        // 타겟의 그림 공개 (TODO: PNG 전송)
-        // 지금은 일단 자기 그림만 보임
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.StopTickTock();
+        }
     }
 
     // ===== End =====

@@ -54,7 +54,12 @@ public class LobbyUI : MonoBehaviourPunCallbacks
 
     void Start()
 {
-    if (PhotonNetwork.InRoom)
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayLobbyBGM();
+        }
+
+        if (PhotonNetwork.InRoom)
     {
         // AutomaticallySyncScene 설정
         if (!PhotonNetwork.IsMasterClient)
@@ -101,6 +106,11 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     private void OnGameStart()
     {
         Debug.Log("[LobbyUI] Game Start clicked");
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayPencilButtonClick();
+        }
         
         // Photon 연결 시작
         networkManager.ConnectToPhoton();
@@ -141,6 +151,11 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         {
             Debug.LogWarning("[LobbyUI] Nickname is empty!");
             return;
+        }
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayCorrectAnswer();
         }
 
         networkManager.SetPlayerName(nickname);

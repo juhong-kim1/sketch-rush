@@ -86,6 +86,11 @@ public class DrawingCanvas : MonoBehaviour
             isDrawing = true;
             lastDrawPosition = localPos;
             DrawPoint(localPos);
+
+            if (SoundManager.Instance != null)
+            {
+                SoundManager.Instance.StartDrawingSound();
+            }
         }
     }
 
@@ -104,7 +109,12 @@ public class DrawingCanvas : MonoBehaviour
     void StopDrawing()
     {
         isDrawing = false;
-        texture.Apply(); // 마지막에 한 번 더 (안전)
+        texture.Apply();
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.StopDrawingSound();
+        }
     }
 
     Vector2 GetLocalPosition(Vector2 screenPosition)

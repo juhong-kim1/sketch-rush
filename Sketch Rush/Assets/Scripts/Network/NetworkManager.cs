@@ -81,6 +81,11 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 
     public override void OnJoinedRoom()
     {
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayPencilButtonClick();
+        }
+
         Debug.Log($"[NetworkManager] Joined room: {PhotonNetwork.CurrentRoom.Name}");
         Debug.Log($"[NetworkManager] Players in room: {PhotonNetwork.CurrentRoom.PlayerCount}");
     }
