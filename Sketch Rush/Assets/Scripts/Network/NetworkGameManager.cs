@@ -359,7 +359,7 @@ private string SelectRandomWord()
         {
             // 케이스 1: 타겟이 맞춤
             string targetName = GetPlayerName(targetActorNumber);
-            resultData.message = $"{targetName}님이 맞췄습니다! 3점을 획득합니다.";
+            resultData.message = $"{targetName}님이 맞췄습니다! 3점을 획득합니다.\n정답: {gameManager.CurrentQuizAnswer}";
             resultData.targetName = targetName;
             resultData.winnerDrawing = null; // 타겟 그림만 표시
         }
@@ -370,7 +370,7 @@ private string SelectRandomWord()
             string winnerName = GetPlayerName(winnerActorNumber);
             resultData.targetName = targetName; // ✅ 추가
             resultData.winnerName = winnerName;
-            resultData.message = $"{winnerName}님이 맞췄습니다! 1점을 획득합니다.";
+            resultData.message = $"{winnerName}님이 맞췄습니다! 1점을 획득합니다.\n정답: {gameManager.CurrentQuizAnswer}";
 
             // 맞춘 사람의 그림도 가져오기
             if (playerDataDict.ContainsKey(winnerActorNumber))

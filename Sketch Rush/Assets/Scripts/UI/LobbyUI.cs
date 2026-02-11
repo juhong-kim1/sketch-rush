@@ -148,6 +148,11 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         ShowPanel("Lobby");
     }
 
+    public void OnConfirmNickname(string nickname)
+    {
+        OnConfirmNickname();
+    }
+
     // ===== 방 생성/입장 =====
     private void OnCreateRoom()
     {

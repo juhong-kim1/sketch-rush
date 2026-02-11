@@ -6,7 +6,7 @@ public class NetworkManager : MonoBehaviourPunCallbacks
 {
     [Header("Settings")]
     [SerializeField] private string gameVersion = "1.0";
-    [SerializeField] private byte maxPlayersPerRoom = 15;
+    [SerializeField] private byte maxPlayersPerRoom = 6;
 
     private void Awake()
     {

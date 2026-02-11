@@ -277,6 +277,11 @@ private void OnQuizFeedback(object data)
             gameManager.CheckAnswer(quizInput.text);
     }
 
+    public void OnSubmitClick(string input)
+    {
+        OnSubmitClick();
+    }
+
     private void OnReturnToRoomClick()
     {
         gameManager.ReturnToRoom();
