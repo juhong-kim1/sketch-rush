@@ -149,7 +149,7 @@ private void ShowPanel(string state)
         }
         if (quizTimerText != null && quizTimerText.gameObject.activeInHierarchy)
         {
-            quizTimerText.text = $"Time: {seconds}s";
+            quizTimerText.text = $"{seconds}초 안에 답을 입력하세요";
         }
     }
 

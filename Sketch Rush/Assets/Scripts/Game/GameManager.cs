@@ -219,16 +219,16 @@ public void StartQuizRound(int roundIndex, int targetActorNumber, bool myTurn, s
         }
 
         int totalRounds = PhotonNetwork.CurrentRoom.PlayerCount * 3;
-        GameEventSystem.Publish("OnQuizProgress", $"Round {currentQuizRound + 1}/{totalRounds}");
+        GameEventSystem.Publish("OnQuizProgress", $"{totalRounds} 라운드 중 {currentQuizRound + 1} 라운드");
         
         if (isMyTurn)
         {
-            GameEventSystem.Publish("OnQuizTurn", "Phase 1: Your Turn!");
+            GameEventSystem.Publish("OnQuizTurn", "내 차례!");
         }
         else
         {
             string targetName = GetPlayerName(targetActorNumber);
-            GameEventSystem.Publish("OnQuizTurn", $"Phase 1: {targetName}'s Turn");
+            GameEventSystem.Publish("OnQuizTurn", $"{targetName}이 정답 맞추는 중..");
         }
 
         timeLeft = quizTime;
@@ -258,10 +258,11 @@ public void UpdateQuiz()
         }
     }
 
-public void StartPhase2()
+public void StartPhase2(int targetActorNumber)
     {
         Debug.Log("[GameManager] Starting Phase 2 - Others' Turn");
         currentPhase = QuizPhase.OthersTurn;
+        currentTargetActorNumber = targetActorNumber;
         phaseStartTime = Time.time;
         timeLeft = quizTime; // 10초 리셋
         IsActive = true; // Phase 2 재활성화
@@ -274,13 +275,14 @@ public void StartPhase2()
         {
             // 타겟: 입력 불가
             canAnswer = false;
-            GameEventSystem.Publish("OnQuizTurn", "Phase 2: Waiting for others...");
+            GameEventSystem.Publish("OnQuizTurn", "오답! 다른 사람들이 입력 중입니다.");
         }
         else
         {
             // 다른 사람: 입력 가능
+            string targetName = GetPlayerName(targetActorNumber);
             canAnswer = true;
-            GameEventSystem.Publish("OnQuizTurn", "Phase 2: Your Turn!");
+            GameEventSystem.Publish("OnQuizTurn", $"{targetName} 오답! 먼저 입력한 사람이 점수를 얻습니다.");
         }
     }
 

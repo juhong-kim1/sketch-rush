@@ -316,7 +316,7 @@ private string SelectRandomWord()
         Debug.Log($"[GameNetworkManager] Target {targetActorNumber} wrong! Starting Phase 2.");
         
         // GameManager에 Phase 2 시작 요청
-        gameManager.StartPhase2();
+        gameManager.StartPhase2(targetActorNumber);
     }
 
     [PunRPC]
