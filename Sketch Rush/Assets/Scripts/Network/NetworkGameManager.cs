@@ -359,7 +359,8 @@ private string SelectRandomWord()
         {
             // 케이스 1: 타겟이 맞춤
             string targetName = GetPlayerName(targetActorNumber);
-            resultData.message = $"{targetName}님이 맞췄습니다!";
+            resultData.message = $"{targetName}님이 맞췄습니다! 3점을 획득합니다.";
+            resultData.targetName = targetName;
             resultData.winnerDrawing = null; // 타겟 그림만 표시
         }
         else if (wasCorrect && winnerActorNumber != targetActorNumber)
@@ -367,7 +368,9 @@ private string SelectRandomWord()
             // 케이스 2: 다른 사람이 맞춤
             string targetName = GetPlayerName(targetActorNumber);
             string winnerName = GetPlayerName(winnerActorNumber);
-            resultData.message = $"{winnerName}님이 맞췄습니다!\n{targetName}님은 틀렸습니다.";
+            resultData.targetName = targetName; // ✅ 추가
+            resultData.winnerName = winnerName;
+            resultData.message = $"{winnerName}님이 맞췄습니다! 1점을 획득합니다.";
 
             // 맞춘 사람의 그림도 가져오기
             if (playerDataDict.ContainsKey(winnerActorNumber))
@@ -385,6 +388,7 @@ private string SelectRandomWord()
         {
             // 케이스 3: 아무도 못 맞춤
             string targetName = GetPlayerName(targetActorNumber);
+            resultData.targetName = targetName;
             resultData.message = $"시간 초과!\n정답: {gameManager.CurrentQuizAnswer}";
             resultData.winnerDrawing = null;
         }

@@ -40,6 +40,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI resultText;
     [SerializeField] private RawImage targetDrawingImage;
     [SerializeField] private RawImage winnerDrawingImage;
+    [SerializeField] private TextMeshProUGUI targetLabel;
+    [SerializeField] private TextMeshProUGUI winnerLabel;
 
     [Header("End UI")]
     [SerializeField] private TextMeshProUGUI endScoreText;
@@ -328,6 +330,12 @@ public void ShowFeedback(string message, bool isCorrect)
             tex.LoadImage(resultData.targetDrawing);
             targetDrawingImage.texture = tex;
             targetDrawingImage.gameObject.SetActive(true);
+
+            if (targetLabel != null)
+            {
+                targetLabel.text = $"{resultData.targetName}의 그림";
+                targetLabel.gameObject.SetActive(true);
+            }
         }
 
         if (resultData.winnerDrawing != null)
@@ -336,10 +344,18 @@ public void ShowFeedback(string message, bool isCorrect)
             tex.LoadImage(resultData.winnerDrawing);
             winnerDrawingImage.texture = tex;
             winnerDrawingImage.gameObject.SetActive(true);
+
+            if (winnerLabel != null)
+            {
+                winnerLabel.text = $"{resultData.winnerName}의 그림";
+                winnerLabel.gameObject.SetActive(true);
+            }
         }
         else
         {
             winnerDrawingImage.gameObject.SetActive(false);
+            if (winnerLabel != null)
+                winnerLabel.gameObject.SetActive(false);
         }
 
         StartCoroutine(HideResultPanelAfterDelay(5f));

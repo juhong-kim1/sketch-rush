@@ -419,6 +419,8 @@ public void CheckAnswer(string playerAnswer)
 public class RoundResultData
 {
     public string message;
+    public string targetName;
+    public string winnerName;
     public byte[] targetDrawing;
-    public byte[] winnerDrawing; // null일 수도 있음
+    public byte[] winnerDrawing;
 }
