@@ -10,8 +10,8 @@ public class VoiceRecognizer : MonoBehaviour
     private bool isRecording = false;
     public bool IsProcessing { get; private set; } = false;
 
-    public event Action<string> OnRecognized; // ÀÎ½Ä ¿Ï·á ÀÌº¥Æ®
-    public event Action<string> OnError; // ¿¡·¯ ÀÌº¥Æ®
+    public event Action<string> OnRecognized; // ï¿½Î½ï¿½ ï¿½Ï·ï¿½ ï¿½Ìºï¿½Æ®
+    public event Action<string> OnError; // ï¿½ï¿½ï¿½ï¿½ ï¿½Ìºï¿½Æ®
 
     private string apiKey;
     private APIConfig config;
@@ -23,7 +23,22 @@ public class VoiceRecognizer : MonoBehaviour
         apiKey = config.GoogleSpeechApiKey;
     }
 
-    // ³ìÀ½ ½ÃÀÛ
+    IEnumerator Start()
+    {
+#if UNITY_ANDROID
+        if (!UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.Microphone))
+        {
+            UnityEngine.Android.Permission.RequestUserPermission(UnityEngine.Android.Permission.Microphone);
+            yield return new WaitForSeconds(1f);
+        }
+#elif UNITY_IOS
+        yield return Application.RequestUserAuthorization(UserAuthorization.Microphone);
+#else
+        yield return null;
+#endif
+    }
+
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     public void StartRecording()
     {
         if (isRecording) return;
@@ -33,7 +48,7 @@ public class VoiceRecognizer : MonoBehaviour
         isRecording = true;
     }
 
-    // ³ìÀ½ Á¤Áö ¹× ÀÎ½Ä
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Î½ï¿½
     public void StopRecordingAndRecognize()
     {
         if (!isRecording) return;
@@ -50,13 +65,13 @@ public class VoiceRecognizer : MonoBehaviour
     {
         Debug.Log("[VoiceRecognizer] Converting audio...");
 
-        // 1. AudioClip ¡æ WAV º¯È¯
+        // 1. AudioClip ï¿½ï¿½ WAV ï¿½ï¿½È¯
         byte[] wavData = ConvertToWAV(recordedClip);
 
-        // 2. Base64 ÀÎÄÚµù
+        // 2. Base64 ï¿½ï¿½ï¿½Úµï¿½
         string base64Audio = Convert.ToBase64String(wavData);
 
-        // 3. Google API ¿äÃ» JSON
+        // 3. Google API ï¿½ï¿½Ã» JSON
         string json = $@"{{
             ""config"": {{
                 ""encoding"": ""LINEAR16"",
@@ -70,7 +85,7 @@ public class VoiceRecognizer : MonoBehaviour
 
         Debug.Log("[VoiceRecognizer] Sending to Google...");
 
-        // 4. HTTP ¿äÃ»
+        // 4. HTTP ï¿½ï¿½Ã»
         string url = $"https://speech.googleapis.com/v1/speech:recognize?key={apiKey}";
 
         UnityWebRequest request = new UnityWebRequest(url, "POST");
@@ -85,7 +100,7 @@ public class VoiceRecognizer : MonoBehaviour
         {
             Debug.Log("[VoiceRecognizer] Response: " + request.downloadHandler.text);
 
-            // 5. °á°ú ÆÄ½Ì
+            // 5. ï¿½ï¿½ï¿½ ï¿½Ä½ï¿½
             string result = ParseResponse(request.downloadHandler.text);
 
             if (!string.IsNullOrEmpty(result))
@@ -96,19 +111,19 @@ public class VoiceRecognizer : MonoBehaviour
             else
             {
                 Debug.LogWarning("[VoiceRecognizer] No speech detected");
-                OnError?.Invoke("À½¼ºÀ» ÀÎ½ÄÇÏÁö ¸øÇß½À´Ï´Ù");
+                OnError?.Invoke("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Î½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ß½ï¿½ï¿½Ï´ï¿½");
             }
         }
         else
         {
             Debug.LogError($"[VoiceRecognizer] Error: {request.error}");
-            OnError?.Invoke("À½¼º ÀÎ½Ä ½ÇÆÐ");
+            OnError?.Invoke("ï¿½ï¿½ï¿½ï¿½ ï¿½Î½ï¿½ ï¿½ï¿½ï¿½ï¿½");
         }
 
         IsProcessing = false;
     }
 
-    // WAV º¯È¯
+    // WAV ï¿½ï¿½È¯
     byte[] ConvertToWAV(AudioClip clip)
     {
         float[] samples = new float[clip.samples * clip.channels];
@@ -129,7 +144,7 @@ public class VoiceRecognizer : MonoBehaviour
         return bytesData;
     }
 
-    // ÀÀ´ä ÆÄ½Ì
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½Ä½ï¿½
     string ParseResponse(string json)
     {
         try

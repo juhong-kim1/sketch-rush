@@ -50,6 +50,8 @@ public class UIManager : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button restartButton;
 
+    [SerializeField] private GameObject winnerDrawingContainer;
+
     private GameManager gameManager;
     private VoiceRecognizer voiceRecognizer;
     private bool isVoiceRecording = false;
@@ -352,7 +354,8 @@ public void ShowFeedback(string message, bool isCorrect)
         }
         else
         {
-            winnerDrawingImage.gameObject.SetActive(false);
+            winnerDrawingContainer.SetActive(false);
+            //winnerDrawingImage.gameObject.SetActive(false);
             if (winnerLabel != null)
                 winnerLabel.gameObject.SetActive(false);
         }
