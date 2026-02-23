@@ -27,6 +27,11 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     [SerializeField] private Transform playerListContent;
     [SerializeField] private Button startButton;
     [SerializeField] private Button leaveButton;
+    [SerializeField] private Button createPrivateRoomButton;
+    [SerializeField] private Button joinPrivateRoomButton;
+    [SerializeField] private GameObject privateRoomJoinPanel;
+    [SerializeField] private TMP_InputField privateRoomCodeInput;
+    [SerializeField] private Button confirmPrivateJoinButton;
 
     [Header("GameStart Panel")]
     [SerializeField] private Button gameStartButton;
@@ -101,6 +106,9 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     startButton.onClick.RemoveAllListeners();
     startButton.onClick.AddListener(OnStartOrReadyClick);
     leaveButton.onClick.AddListener(OnLeaveRoom);
+    createPrivateRoomButton.onClick.AddListener(OnCreatePrivateRoom);
+    joinPrivateRoomButton.onClick.AddListener(OnJoinPrivateRoomClick);
+    confirmPrivateJoinButton.onClick.AddListener(OnConfirmPrivateJoin);
     }
 
     private void OnGameStart()
@@ -339,5 +347,31 @@ public class LobbyUI : MonoBehaviourPunCallbacks
             networkManager.SetPlayerReady(isReady);
             UpdateStartButton();
         }
+    }
+
+    private void OnCreatePrivateRoom()
+    {
+        string code = networkManager.CreatePrivateRoom();
+        GUIUtility.systemCopyBuffer = code;
+        Debug.Log($"[LobbyUI] Private room code: {code}");
+    }
+
+    private void OnJoinPrivateRoomClick()
+    {
+        privateRoomJoinPanel.SetActive(true);
+    }
+
+    private void OnConfirmPrivateJoin()
+    {
+        string code = privateRoomCodeInput.text.Trim();
+        if (string.IsNullOrEmpty(code)) return;
+        
+        networkManager.JoinPrivateRoom(code);
+        privateRoomJoinPanel.SetActive(false);
+    }
+
+    public void OnConfirmPrivateJoin(string code)
+    {
+        OnConfirmPrivateJoin();
     }
 }

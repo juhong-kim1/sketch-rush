@@ -224,4 +224,24 @@ public class NetworkManager : MonoBehaviourPunCallbacks
             PhotonNetwork.LeaveRoom();
         }
     }
+
+    public string CreatePrivateRoom()
+{
+    string code = Random.Range(10000000, 99999999).ToString();
+    
+    RoomOptions roomOptions = new RoomOptions
+    {
+        MaxPlayers = maxPlayersPerRoom,
+        IsVisible = false,
+        IsOpen = true
+    };
+
+    PhotonNetwork.CreateRoom(code, roomOptions);
+    return code;
+}
+
+public void JoinPrivateRoom(string code)
+{
+    PhotonNetwork.JoinRoom(code);
+}
 }
