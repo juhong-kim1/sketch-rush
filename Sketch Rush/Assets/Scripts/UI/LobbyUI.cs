@@ -332,7 +332,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
 
             // 모든 플레이어 Ready면 활성화
             bool allReady = networkManager.AreAllPlayersReady();
-            startButton.interactable = allReady && PhotonNetwork.CurrentRoom.PlayerCount >= 1;
+            startButton.interactable = allReady && PhotonNetwork.CurrentRoom.PlayerCount >= 2;
             //startButton.GetComponent<Image>().color = allReady ? Color.green : Color.white;
         }
         else

@@ -27,11 +27,10 @@ public class SafeArea : MonoBehaviour
         }
     }
 
-    private void UpdateSizeToSafeArea()
+private void UpdateSizeToSafeArea()
     {
-
         var safeArea = GetSafeArea();
-        var inverseSize = new Vector2(1f, 1f) / canvas.pixelRect.size;
+        var inverseSize = new Vector2(1f / Screen.width, 1f / Screen.height);
         var newAnchorMin = Vector2.Scale(safeArea.position, inverseSize);
         var newAnchorMax = Vector2.Scale(safeArea.position + safeArea.size, inverseSize);
 

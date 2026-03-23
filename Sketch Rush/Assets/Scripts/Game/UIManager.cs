@@ -126,7 +126,7 @@ private void ShowPanel(string state)
     }
 
     // ===== Observer 핸들러 =====
-    private void OnStateChanged(object data)
+private void OnStateChanged(object data)
     {
         string state = (string)data;
         ShowPanel(state);
@@ -143,7 +143,6 @@ private void ShowPanel(string state)
         if (state == "Quiz" && quizInput != null)
         {
             quizInput.text = "";
-            quizInput.ActivateInputField();
         }
 
         Debug.Log($"[UIManager] Panel: {state}");
@@ -232,12 +231,11 @@ private void ShowPanel(string state)
     }
 
     // ===== Quiz 이벤트 =====
-    private void OnQuizLoaded(object data)
+private void OnQuizLoaded(object data)
     {
         Texture2D tex = (Texture2D)data;
         quizImage.texture = tex;
         quizInput.text = "";
-        quizInput.ActivateInputField();
         quizFeedbackText.text = "";
     }
 
@@ -264,11 +262,10 @@ private void OnQuizFeedback(object data)
         }
     }
 
-    private void OnQuizFeedbackClear(object data)
+private void OnQuizFeedbackClear(object data)
     {
         quizFeedbackText.text = "";
         quizInput.text = "";
-        quizInput.ActivateInputField();
     }
 
     private void OnQuizProgress(object data)

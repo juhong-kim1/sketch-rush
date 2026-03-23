@@ -10,18 +10,10 @@ public class VoiceRecognizer : MonoBehaviour
     private bool isRecording = false;
     public bool IsProcessing { get; private set; } = false;
 
-    public event Action<string> OnRecognized; // �ν� �Ϸ� �̺�Ʈ
-    public event Action<string> OnError; // ���� �̺�Ʈ
+    public event Action<string> OnRecognized;
+    public event Action<string> OnError;
 
-    private string apiKey;
-    private APIConfig config;
-
-    private void Awake()
-    {
-        config = Resources.Load<APIConfig>("APIConfig");
-
-        apiKey = config.GoogleSpeechApiKey;
-    }
+    private const string FUNCTIONS_URL = "https://us-central1-sketch-rush-4f559.cloudfunctions.net/recognizeSpeech";
 
     IEnumerator Start()
     {
@@ -29,7 +21,12 @@ public class VoiceRecognizer : MonoBehaviour
         if (!UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.Microphone))
         {
             UnityEngine.Android.Permission.RequestUserPermission(UnityEngine.Android.Permission.Microphone);
-            yield return new WaitForSeconds(1f);
+            yield return new WaitUntil(() =>
+                UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.Microphone));
+        }
+        else
+        {
+            yield return null;
         }
 #elif UNITY_IOS
         yield return Application.RequestUserAuthorization(UserAuthorization.Microphone);
@@ -38,7 +35,6 @@ public class VoiceRecognizer : MonoBehaviour
 #endif
     }
 
-    // ���� ����
     public void StartRecording()
     {
         if (isRecording) return;
@@ -48,7 +44,6 @@ public class VoiceRecognizer : MonoBehaviour
         isRecording = true;
     }
 
-    // ���� ���� �� �ν�
     public void StopRecordingAndRecognize()
     {
         if (!isRecording) return;
@@ -58,37 +53,21 @@ public class VoiceRecognizer : MonoBehaviour
         isRecording = false;
 
         IsProcessing = true;
-        StartCoroutine(SendToGoogle());
+        StartCoroutine(SendToFunctions());
     }
 
-    IEnumerator SendToGoogle()
+    IEnumerator SendToFunctions()
     {
         Debug.Log("[VoiceRecognizer] Converting audio...");
 
-        // 1. AudioClip �� WAV ��ȯ
         byte[] wavData = ConvertToWAV(recordedClip);
-
-        // 2. Base64 ���ڵ�
         string base64Audio = Convert.ToBase64String(wavData);
 
-        // 3. Google API ��û JSON
-        string json = $@"{{
-            ""config"": {{
-                ""encoding"": ""LINEAR16"",
-                ""sampleRateHertz"": 16000,
-                ""languageCode"": ""ko-KR""
-            }},
-            ""audio"": {{
-                ""content"": ""{base64Audio}""
-            }}
-        }}";
+        string json = $"{{\"audio\": \"{base64Audio}\"}}";
 
-        Debug.Log("[VoiceRecognizer] Sending to Google...");
+        Debug.Log("[VoiceRecognizer] Sending to Firebase Functions...");
 
-        // 4. HTTP ��û
-        string url = $"https://speech.googleapis.com/v1/speech:recognize?key={apiKey}";
-
-        UnityWebRequest request = new UnityWebRequest(url, "POST");
+        UnityWebRequest request = new UnityWebRequest(FUNCTIONS_URL, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();
@@ -100,7 +79,6 @@ public class VoiceRecognizer : MonoBehaviour
         {
             Debug.Log("[VoiceRecognizer] Response: " + request.downloadHandler.text);
 
-            // 5. ��� �Ľ�
             string result = ParseResponse(request.downloadHandler.text);
 
             if (!string.IsNullOrEmpty(result))
@@ -111,40 +89,62 @@ public class VoiceRecognizer : MonoBehaviour
             else
             {
                 Debug.LogWarning("[VoiceRecognizer] No speech detected");
-                OnError?.Invoke("������ �ν����� ���߽��ϴ�");
+                OnError?.Invoke("음성이 인식되지 않았습니다");
             }
         }
         else
         {
             Debug.LogError($"[VoiceRecognizer] Error: {request.error}");
-            OnError?.Invoke("���� �ν� ����");
+            OnError?.Invoke("음성 인식 실패");
         }
 
         IsProcessing = false;
     }
 
-    // WAV ��ȯ
     byte[] ConvertToWAV(AudioClip clip)
     {
         float[] samples = new float[clip.samples * clip.channels];
         clip.GetData(samples, 0);
 
         short[] intData = new short[samples.Length];
-        byte[] bytesData = new byte[samples.Length * 2];
+        byte[] pcmData = new byte[samples.Length * 2];
 
         int rescaleFactor = 32767;
-
         for (int i = 0; i < samples.Length; i++)
         {
             intData[i] = (short)(samples[i] * rescaleFactor);
             byte[] byteArr = BitConverter.GetBytes(intData[i]);
-            byteArr.CopyTo(bytesData, i * 2);
+            byteArr.CopyTo(pcmData, i * 2);
         }
 
-        return bytesData;
+        int sampleRate = clip.frequency;
+        int channels = clip.channels;
+        int byteRate = sampleRate * channels * 2;
+        int dataSize = pcmData.Length;
+        int fileSize = 44 + dataSize;
+
+        byte[] wav = new byte[fileSize];
+
+        System.Text.Encoding.ASCII.GetBytes("RIFF").CopyTo(wav, 0);
+        BitConverter.GetBytes(fileSize - 8).CopyTo(wav, 4);
+        System.Text.Encoding.ASCII.GetBytes("WAVE").CopyTo(wav, 8);
+
+        System.Text.Encoding.ASCII.GetBytes("fmt ").CopyTo(wav, 12);
+        BitConverter.GetBytes(16).CopyTo(wav, 16);
+        BitConverter.GetBytes((short)1).CopyTo(wav, 20);
+        BitConverter.GetBytes((short)channels).CopyTo(wav, 22);
+        BitConverter.GetBytes(sampleRate).CopyTo(wav, 24);
+        BitConverter.GetBytes(byteRate).CopyTo(wav, 28);
+        BitConverter.GetBytes((short)(channels * 2)).CopyTo(wav, 32);
+        BitConverter.GetBytes((short)16).CopyTo(wav, 34);
+
+        System.Text.Encoding.ASCII.GetBytes("data").CopyTo(wav, 36);
+        BitConverter.GetBytes(dataSize).CopyTo(wav, 40);
+        pcmData.CopyTo(wav, 44);
+
+        return wav;
     }
 
-    // ���� �Ľ�
     string ParseResponse(string json)
     {
         try
