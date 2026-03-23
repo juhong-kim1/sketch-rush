@@ -4,6 +4,7 @@ using TMPro;
 using Photon.Pun;
 using Photon.Realtime;
 using System.Collections.Generic;
+using System.Collections;
 
 public class LobbyUI : MonoBehaviourPunCallbacks
 {
@@ -36,6 +37,15 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     [Header("GameStart Panel")]
     [SerializeField] private Button gameStartButton;
     [SerializeField] private Button gameEndButton;
+
+    [Header("Intro Animation")]
+    [SerializeField] private CanvasGroup logoCanvasGroup;
+    [SerializeField] private GameObject gameStartButtonObj;
+    [SerializeField] private GameObject gameEndButtonObj;
+
+    [Header("Back Buttons")]
+    [SerializeField] private Button nicknameBackButton;
+    [SerializeField] private Button lobbyBackButton;
 
     private bool isReady = false;
 
@@ -96,6 +106,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     else
     {
         ShowPanel("GameStart");
+        StartCoroutine(PlayIntroAnimation());
     }
 
     gameEndButton.onClick.AddListener(OnGameEnd);
@@ -109,6 +120,8 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     createPrivateRoomButton.onClick.AddListener(OnCreatePrivateRoom);
     joinPrivateRoomButton.onClick.AddListener(OnJoinPrivateRoomClick);
     confirmPrivateJoinButton.onClick.AddListener(OnConfirmPrivateJoin);
+    nicknameBackButton.onClick.AddListener(OnNicknameBack);
+    lobbyBackButton.onClick.AddListener(OnLobbyBack);
     }
 
     private void OnGameStart()
@@ -146,6 +159,7 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         if (nicknamePanel == null || lobbyPanel == null || roomPanel == null)
             return;
 
+        gameStartPanel.SetActive(panel == "GameStart");
         nicknamePanel.SetActive(panel == "Nickname");
         lobbyPanel.SetActive(panel == "Lobby");
         roomPanel.SetActive(panel == "Room");
@@ -373,5 +387,61 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     public void OnConfirmPrivateJoin(string code)
     {
         OnConfirmPrivateJoin();
+    }
+
+    IEnumerator PlayIntroAnimation()
+    {
+        gameStartButtonObj.SetActive(false);
+        gameEndButtonObj.SetActive(false);
+
+        logoCanvasGroup.alpha = 0f;
+        float duration = 1.5f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            logoCanvasGroup.alpha = Mathf.Clamp01(elapsed / duration);
+            yield return null;
+        }
+
+        logoCanvasGroup.alpha = 1f;
+        yield return new WaitForSeconds(0.3f);
+
+        yield return StartCoroutine(PopButton(gameStartButtonObj));
+        yield return StartCoroutine(PopButton(gameEndButtonObj));
+    }
+
+    IEnumerator PopButton(GameObject button)
+    {
+        button.SetActive(true);
+        button.transform.localScale = Vector3.zero;
+
+        float duration = 0.3f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            float scale = Mathf.Sin(t * Mathf.PI * 0.5f) * 1.2f;
+            if (t > 0.7f) scale = Mathf.Lerp(1.2f, 1f, (t - 0.7f) / 0.3f);
+            button.transform.localScale = Vector3.one * scale;
+            yield return null;
+        }
+
+        button.transform.localScale = Vector3.one;
+    }
+
+    private void OnNicknameBack()
+    {
+        ShowPanel("GameStart");
+        StartCoroutine(PlayIntroAnimation());
+    }
+
+    private void OnLobbyBack()
+    {
+        ShowPanel("GameStart");
+        StartCoroutine(PlayIntroAnimation());
     }
 }

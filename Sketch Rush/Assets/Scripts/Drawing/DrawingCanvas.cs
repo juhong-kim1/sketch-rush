@@ -201,6 +201,9 @@ public class DrawingCanvas : MonoBehaviour
 
     public void ClearCanvas()
     {
+        if (texture == null)
+        InitializeTexture();
+
         texture.SetPixels(clearColors);
         texture.Apply();
     }

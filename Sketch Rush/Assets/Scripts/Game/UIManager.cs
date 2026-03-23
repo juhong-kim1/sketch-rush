@@ -50,6 +50,9 @@ public class UIManager : MonoBehaviour
     [Header("Buttons")]
     [SerializeField] private Button restartButton;
 
+    [Header("Loading UI")]
+    [SerializeField] private TextMeshProUGUI loadingText;
+
     [SerializeField] private GameObject winnerDrawingContainer;
 
     private GameManager gameManager;
@@ -127,6 +130,15 @@ private void ShowPanel(string state)
     {
         string state = (string)data;
         ShowPanel(state);
+
+        if (state == "Loading")
+        {
+            StartCoroutine(AnimateLoadingText());
+        }
+        else
+        {
+            StopCoroutine(AnimateLoadingText());
+        }
 
         if (state == "Quiz" && quizInput != null)
         {
@@ -413,4 +425,17 @@ public void ShowFeedback(string message, bool isCorrect)
             quizFeedbackText.color = Color.yellow;
         }
     }
+
+    IEnumerator AnimateLoadingText()
+{
+    string[] dots = { "AI 단어 로딩 중..", "AI 단어 로딩 중...", "AI 단어 로딩 중...." };
+    int index = 0;
+
+    while (true)
+    {
+        loadingText.text = dots[index];
+        index = (index + 1) % dots.Length;
+        yield return new WaitForSeconds(0.5f);
+    }
+}
 }
