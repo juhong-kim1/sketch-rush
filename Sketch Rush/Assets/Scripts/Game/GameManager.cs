@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private VoiceRecognizer voiceRecognizer;
 
     [Header("Game Settings")]
-    [SerializeField] private float drawingTime = 5f;
+    private float drawingTime = 5f;
     [SerializeField] private float quizTime = 10f;
 
     // Phase System
@@ -66,16 +66,21 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void Start()
+void Start()
     {
-        // 로비에서 Start 버튼 누르고 온 거니까 바로 Loading
+        if (PhotonNetwork.InRoom &&
+            PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("DrawTime"))
+        {
+            drawingTime = (float)PhotonNetwork.CurrentRoom.CustomProperties["DrawTime"];
+            Debug.Log($"[GameManager] DrawTime set to: {drawingTime}s");
+        }
+
         if (PhotonNetwork.IsMasterClient)
         {
             ChangeState(new LoadingState(this));
         }
         else
         {
-            // 클라이언트는 대기
             GameEventSystem.Publish("OnStateChanged", "Loading");
         }
     }

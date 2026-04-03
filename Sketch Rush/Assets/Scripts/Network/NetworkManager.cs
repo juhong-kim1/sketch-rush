@@ -43,21 +43,25 @@ public class NetworkManager : MonoBehaviourPunCallbacks
     }
 
     // ===== 방 생성/입장 =====
-    public void CreateRoom(string roomName)
+public void CreateRoom(string roomName, int drawTime = 5)
     {
         if (string.IsNullOrEmpty(roomName))
         {
             roomName = "Room_" + Random.Range(1000, 9999);
         }
 
+        var customProps = new ExitGames.Client.Photon.Hashtable { { "DrawTime", (float)drawTime } };
+
         RoomOptions roomOptions = new RoomOptions
         {
             MaxPlayers = maxPlayersPerRoom,
             IsVisible = true,
-            IsOpen = true
+            IsOpen = true,
+            CustomRoomProperties = customProps,
+            CustomRoomPropertiesForLobby = new string[] { "DrawTime" }
         };
 
-        Debug.Log($"[NetworkManager] Creating room: {roomName}");
+        Debug.Log($"[NetworkManager] Creating room: {roomName}, DrawTime: {drawTime}");
         PhotonNetwork.CreateRoom(roomName, roomOptions);
     }
 
@@ -225,20 +229,24 @@ public class NetworkManager : MonoBehaviourPunCallbacks
         }
     }
 
-    public string CreatePrivateRoom()
-{
-    string code = Random.Range(10000000, 99999999).ToString();
-    
-    RoomOptions roomOptions = new RoomOptions
+public string CreatePrivateRoom(int drawTime = 5)
     {
-        MaxPlayers = maxPlayersPerRoom,
-        IsVisible = false,
-        IsOpen = true
-    };
+        string code = Random.Range(10000000, 99999999).ToString();
 
-    PhotonNetwork.CreateRoom(code, roomOptions);
-    return code;
-}
+        var customProps = new ExitGames.Client.Photon.Hashtable { { "DrawTime", (float)drawTime } };
+
+        RoomOptions roomOptions = new RoomOptions
+        {
+            MaxPlayers = maxPlayersPerRoom,
+            IsVisible = false,
+            IsOpen = true,
+            CustomRoomProperties = customProps,
+            CustomRoomPropertiesForLobby = new string[] { "DrawTime" }
+        };
+
+        PhotonNetwork.CreateRoom(code, roomOptions);
+        return code;
+    }
 
 public void JoinPrivateRoom(string code)
 {

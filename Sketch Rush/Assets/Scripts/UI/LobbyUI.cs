@@ -49,6 +49,14 @@ public class LobbyUI : MonoBehaviourPunCallbacks
 
     private bool isReady = false;
 
+    [Header("Draw Time Settings")]
+    [SerializeField] private GameObject drawTimePanel;
+    [SerializeField] private Toggle drawTime5Toggle;
+    [SerializeField] private Toggle drawTime7Toggle;
+
+    private int selectedDrawTime = 5;
+
+
     [Header("Prefabs")]
     [SerializeField] private GameObject playerListItemPrefab;
 
@@ -67,61 +75,65 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         GameEventSystem.Unsubscribe("OnPlayerReadyChanged", OnPlayerReadyChanged);
     }
 
-    void Start()
-{
+void Start()
+    {
         if (SoundManager.Instance != null)
-        {
             SoundManager.Instance.PlayLobbyBGM();
-        }
 
         if (PhotonNetwork.InRoom)
-    {
-        // AutomaticallySyncScene 설정
-        if (!PhotonNetwork.IsMasterClient)
         {
-            PhotonNetwork.AutomaticallySyncScene = false;
+            PhotonNetwork.AutomaticallySyncScene = PhotonNetwork.IsMasterClient;
+
+            ShowPanel("Room");
+            roomNameText.text = PhotonNetwork.CurrentRoom.Name;
+
+            if (PhotonNetwork.IsMasterClient)
+            {
+                isReady = true;
+                networkManager.SetPlayerReady(true);
+                drawTimePanel.SetActive(true);
+            }
+            else
+            {
+                isReady = false;
+                networkManager.SetPlayerReady(false);
+                drawTimePanel.SetActive(false);
+            }
+
+            UpdatePlayerList();
+            UpdateStartButton();
         }
         else
         {
-            PhotonNetwork.AutomaticallySyncScene = true;
+            ShowPanel("GameStart");
+            StartCoroutine(PlayIntroAnimation());
         }
 
-        ShowPanel("Room");
-        roomNameText.text = $"{PhotonNetwork.CurrentRoom.Name}";
+        gameEndButton.onClick.AddListener(OnGameEnd);
+        gameStartButton.onClick.AddListener(OnGameStart);
+        confirmButton.onClick.AddListener(OnConfirmNickname);
+        createRoomButton.onClick.AddListener(OnCreateRoom);
+        joinRandomButton.onClick.AddListener(OnJoinRandom);
+        startButton.onClick.RemoveAllListeners();
+        startButton.onClick.AddListener(OnStartOrReadyClick);
+        leaveButton.onClick.AddListener(OnLeaveRoom);
+        createPrivateRoomButton.onClick.AddListener(OnCreatePrivateRoom);
+        joinPrivateRoomButton.onClick.AddListener(OnJoinPrivateRoomClick);
+        confirmPrivateJoinButton.onClick.AddListener(OnConfirmPrivateJoin);
+        nicknameBackButton.onClick.AddListener(OnNicknameBack);
+        lobbyBackButton.onClick.AddListener(OnLobbyBack);
 
-        if (PhotonNetwork.IsMasterClient)
+        drawTime7Toggle.isOn = false;
+        drawTime5Toggle.isOn = true;
+        selectedDrawTime = 5;
+        drawTime5Toggle.onValueChanged.AddListener(on5 =>
         {
-            isReady = true;
-            networkManager.SetPlayerReady(true);
-        }
-        else
+            if (on5) { selectedDrawTime = 5; UpdateRoomDrawTime(5); }
+        });
+        drawTime7Toggle.onValueChanged.AddListener(on7 =>
         {
-            isReady = false;
-            networkManager.SetPlayerReady(false);
-        }
-
-        UpdatePlayerList();
-        UpdateStartButton();
-    }
-    else
-    {
-        ShowPanel("GameStart");
-        StartCoroutine(PlayIntroAnimation());
-    }
-
-    gameEndButton.onClick.AddListener(OnGameEnd);
-    gameStartButton.onClick.AddListener(OnGameStart);
-    confirmButton.onClick.AddListener(OnConfirmNickname);
-    createRoomButton.onClick.AddListener(OnCreateRoom);
-    joinRandomButton.onClick.AddListener(OnJoinRandom);
-    startButton.onClick.RemoveAllListeners();
-    startButton.onClick.AddListener(OnStartOrReadyClick);
-    leaveButton.onClick.AddListener(OnLeaveRoom);
-    createPrivateRoomButton.onClick.AddListener(OnCreatePrivateRoom);
-    joinPrivateRoomButton.onClick.AddListener(OnJoinPrivateRoomClick);
-    confirmPrivateJoinButton.onClick.AddListener(OnConfirmPrivateJoin);
-    nicknameBackButton.onClick.AddListener(OnNicknameBack);
-    lobbyBackButton.onClick.AddListener(OnLobbyBack);
+            if (on7) { selectedDrawTime = 7; UpdateRoomDrawTime(7); }
+        });
     }
 
     private void OnGameStart()
@@ -191,9 +203,9 @@ public class LobbyUI : MonoBehaviourPunCallbacks
     }
 
     // ===== 방 생성/입장 =====
-    private void OnCreateRoom()
+private void OnCreateRoom()
     {
-        networkManager.CreateRoom(null); // 랜덤 방 이름
+        networkManager.CreateRoom(null, selectedDrawTime);
     }
 
     private void OnJoinRandom()
@@ -206,27 +218,38 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         networkManager.LeaveRoom();
     }
 
+private void UpdateRoomDrawTime(int drawTime)
+    {
+        if (!PhotonNetwork.InRoom || !PhotonNetwork.IsMasterClient) return;
+
+        var props = new ExitGames.Client.Photon.Hashtable { { "DrawTime", (float)drawTime } };
+        PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+        Debug.Log($"[LobbyUI] Room DrawTime updated to: {drawTime}s");
+    }
+
+
     private void OnStartGame()
     {
         networkManager.StartGame();
     }
 
     // ===== Photon 콜백 =====
-    public override void OnJoinedRoom()
+public override void OnJoinedRoom()
     {
         ShowPanel("Room");
         roomNameText.text = $"{PhotonNetwork.CurrentRoom.Name}";
 
-        // Ready 상태 초기화
         if (PhotonNetwork.IsMasterClient)
         {
             isReady = true;
             networkManager.SetPlayerReady(true);
+            drawTimePanel.SetActive(true);
         }
         else
         {
             isReady = false;
             networkManager.SetPlayerReady(false);
+            drawTimePanel.SetActive(false);
         }
 
         UpdatePlayerList();
@@ -363,9 +386,9 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         }
     }
 
-    private void OnCreatePrivateRoom()
+private void OnCreatePrivateRoom()
     {
-        string code = networkManager.CreatePrivateRoom();
+        string code = networkManager.CreatePrivateRoom(selectedDrawTime);
         GUIUtility.systemCopyBuffer = code;
         Debug.Log($"[LobbyUI] Private room code: {code}");
     }
