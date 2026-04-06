@@ -49,6 +49,37 @@ public class GameNetworkManager : MonoBehaviourPunCallbacks
         Debug.Log($"[GameNetworkManager] Players: {string.Join(", ", playerOrder)}");
     }
 
+public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        Debug.Log($"[NetworkGameManager] Player left: {otherPlayer.NickName}");
+
+        // 나간 플레이어 데이터 제거
+        playerDataDict.Remove(otherPlayer.ActorNumber);
+        playerOrder.Remove(otherPlayer.ActorNumber);
+
+        // 1명만 남으면 로비로 복귀
+        if (PhotonNetwork.CurrentRoom.PlayerCount <= 1)
+        {
+            Debug.Log("[NetworkGameManager] Only 1 player left. Returning to lobby.");
+            photonView.RPC("RPC_ReturnToLobby", RpcTarget.All, "플레이어가 모두 나갔습니다. 로비로 돌아갑니다.");
+            return;
+        }
+
+        // currentTargetIndex가 범위를 벗어나지 않도록 조정
+        if (playerOrder.Count > 0)
+            currentTargetIndex = currentTargetIndex % playerOrder.Count;
+
+        Debug.Log($"[NetworkGameManager] Remaining players: {string.Join(", ", playerOrder)}");
+    }
+
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        // 호스트가 나간 경우 → 모두 로비로 복귀
+        Debug.Log($"[NetworkGameManager] Host left. New master: {newMasterClient.NickName}. Returning to lobby.");
+        photonView.RPC("RPC_ReturnToLobby", RpcTarget.All, "방장이 나갔습니다. 로비로 돌아갑니다.");
+    }
+
+
     // ===== AI 단어 생성 (호스트만) =====
     public void StartWordGeneration()
     {
@@ -427,6 +458,19 @@ private string SelectRandomWord()
             PhotonNetwork.LoadLevel("LobbyScene");
         }
     }
+
+[PunRPC]
+    void RPC_ReturnToLobby(string message)
+    {
+        Debug.Log($"[NetworkGameManager] {message}");
+        GameEventSystem.Publish("OnReturnToLobby", message);
+
+        CancelInvoke();
+
+        if (PhotonNetwork.IsMasterClient)
+            PhotonNetwork.LoadLevel("LobbyScene");
+    }
+
 
     // ===== 플레이어 데이터 접근 =====
     public Dictionary<int, PlayerData> GetAllPlayerData()

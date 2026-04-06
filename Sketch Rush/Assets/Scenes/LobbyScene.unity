@@ -5407,6 +5407,8 @@ MonoBehaviour:
   gameEndButtonObj: {fileID: 48343783}
   nicknameBackButton: {fileID: 1591704888}
   lobbyBackButton: {fileID: 2014460343}
+  startButtonSprite: {fileID: -4770222274766455587, guid: fee47d435e731284fa942305db527f87, type: 3}
+  readyButtonSprite: {fileID: -6559420800555587448, guid: 1acd47446599c83489e1c12ad87da586, type: 3}
   drawTimePanel: {fileID: 1638450304}
   drawTime5Toggle: {fileID: 1645640758}
   drawTime7Toggle: {fileID: 1912089745}

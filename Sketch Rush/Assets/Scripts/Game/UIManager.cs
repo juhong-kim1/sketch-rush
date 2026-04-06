@@ -77,6 +77,8 @@ public class UIManager : MonoBehaviour
         GameEventSystem.Subscribe("OnQuizResult", OnQuizResult);
         GameEventSystem.Subscribe("OnRoundResult", OnRoundResult);
         GameEventSystem.Subscribe("OnVoiceError", OnVoiceError);
+        GameEventSystem.Subscribe("OnReturnToLobby", OnReturnToLobby);
+
     }
 
     void OnDestroy()
@@ -94,6 +96,8 @@ public class UIManager : MonoBehaviour
         GameEventSystem.Unsubscribe("OnQuizResult", OnQuizResult);
         GameEventSystem.Unsubscribe("OnRoundResult", OnRoundResult);
         GameEventSystem.Unsubscribe("OnVoiceError", OnVoiceError);
+        GameEventSystem.Unsubscribe("OnReturnToLobby", OnReturnToLobby);
+
     }
 
 void Start()
@@ -422,6 +426,23 @@ public void ShowFeedback(string message, bool isCorrect)
             quizFeedbackText.color = Color.yellow;
         }
     }
+
+private void OnReturnToLobby(object data)
+    {
+        string message = (string)data;
+        Debug.Log($"[UIManager] ReturnToLobby: {message}");
+
+        // 없는 패널 숨기고 메시지 표시
+        ShowPanel("");
+
+        if (loadingPanel != null)
+        {
+            loadingPanel.SetActive(true);
+            if (loadingText != null)
+                loadingText.text = message;
+        }
+    }
+
 
     IEnumerator AnimateLoadingText()
 {

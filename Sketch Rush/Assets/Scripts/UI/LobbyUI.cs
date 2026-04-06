@@ -49,7 +49,12 @@ public class LobbyUI : MonoBehaviourPunCallbacks
 
     private bool isReady = false;
 
-    [Header("Draw Time Settings")]
+    [Header("Button Images")]
+    [SerializeField] private Sprite startButtonSprite;
+    [SerializeField] private Sprite readyButtonSprite;
+
+    
+[Header("Draw Time Settings")]
     [SerializeField] private GameObject drawTimePanel;
     [SerializeField] private Toggle drawTime5Toggle;
     [SerializeField] private Toggle drawTime7Toggle;
@@ -261,14 +266,29 @@ public override void OnJoinedRoom()
         UpdatePlayerList();
         UpdateStartButton();
     }
-    public override void OnMasterClientSwitched(Player newMasterClient)
+
+
+public override void OnMasterClientSwitched(Player newMasterClient)
     {
-        // Ready 상태 초기화
         isReady = false;
         networkManager.SetPlayerReady(false);
 
+        if (newMasterClient == PhotonNetwork.LocalPlayer)
+        {
+            // 내가 새 호스트
+            isReady = true;
+            networkManager.SetPlayerReady(true);
+            drawTimePanel.SetActive(true);
+        }
+        else
+        {
+            drawTimePanel.SetActive(false);
+        }
+
+        UpdatePlayerList();
         UpdateStartButton();
     }
+
 
     public override void OnLeftRoom()
     {
@@ -342,33 +362,29 @@ public override void OnJoinedRoom()
         playerListItems.Clear();
     }
 
-    private void UpdateStartButton()
+private void UpdateStartButton()
     {
+        var buttonImage = startButton.GetComponent<UnityEngine.UI.Image>();
+        var canvasGroup = startButton.GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+            canvasGroup = startButton.gameObject.AddComponent<CanvasGroup>();
+
         if (PhotonNetwork.IsMasterClient)
         {
-            // 호스트: Start 버튼
-            var buttonText = startButton.GetComponentInChildren<TextMeshProUGUI>();
-            if (buttonText != null)
-            {
-                buttonText.text = "게임 시작";
-            }
+            if (buttonImage != null && startButtonSprite != null)
+                buttonImage.sprite = startButtonSprite;
 
-            // 모든 플레이어 Ready면 활성화
             bool allReady = networkManager.AreAllPlayersReady();
             startButton.interactable = allReady && PhotonNetwork.CurrentRoom.PlayerCount >= 2;
-            //startButton.GetComponent<Image>().color = allReady ? Color.green : Color.white;
+            canvasGroup.alpha = startButton.interactable ? 1f : 0.4f;
         }
         else
         {
-            // 클라이언트: Ready 버튼
-            var buttonText = startButton.GetComponentInChildren<TextMeshProUGUI>();
-            if (buttonText != null)
-            {
-                buttonText.text = isReady ? "준비 취소" : "준비";
-            }
+            if (buttonImage != null && readyButtonSprite != null)
+                buttonImage.sprite = readyButtonSprite;
 
             startButton.interactable = true;
-            //startButton.GetComponent<Image>().color = isReady ? Color.green : Color.white;
+            canvasGroup.alpha = isReady ? 0.4f : 1f;
         }
     }
 
