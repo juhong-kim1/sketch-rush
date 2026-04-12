@@ -24,7 +24,6 @@ public class GameManager : MonoBehaviour
     private QuizPhase currentPhase = QuizPhase.TargetTurn;
     private float phaseStartTime = 0f;
 
-    [SerializeField] private int totalQuizRounds = 3;
 
     private GameState currentState;
     public bool IsActive { get; private set; }

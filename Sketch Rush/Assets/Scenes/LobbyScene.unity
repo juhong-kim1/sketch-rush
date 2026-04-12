@@ -6877,6 +6877,8 @@ MonoBehaviour:
   tickTock: {fileID: 8300000, guid: 7c1e604aac434b64cafb02114b654bfe, type: 3}
   drawing: {fileID: 8300000, guid: b7493fb6fa51f3d4bb8c680b4384162f, type: 3}
   nextDrawing: {fileID: 8300000, guid: 2d83d5238b9ca044a937295ee2dba8f4, type: 3}
+  roomExit: {fileID: 8300000, guid: 406dad3849d657947bd802fecb0851aa, type: 3}
+  passwordWrong: {fileID: 8300000, guid: 31b7db57ac16b00439701af2f76a3e50, type: 3}
   bgmVolume: 0.5
   sfxVolume: 0.7
 --- !u!4 &1898341557

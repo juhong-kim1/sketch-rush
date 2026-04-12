@@ -6,7 +6,12 @@
       "mcp__unityMCP__manage_components",
       "mcp__unityMCP__manage_scene",
       "mcp__unityMCP__create_script",
-      "mcp__unityMCP__read_console"
+      "mcp__unityMCP__read_console",
+      "Bash(sed -i 's|m_SourceFontFile: {fileID: 0}|m_SourceFontFile: {fileID: 12800000, guid: 8ffb5de37bad6a84ba4cf05c84dff160, type: 3}|g' '/c/Users/wnghd/github/sketch-rush/Sketch Rush/Assets/Fonts/Gaegu-Regular SDF.asset')",
+      "Bash(sed -i 's|m_SourceFontFileGUID: $|m_SourceFontFileGUID: 8ffb5de37bad6a84ba4cf05c84dff160|g' '/c/Users/wnghd/github/sketch-rush/Sketch Rush/Assets/Fonts/Gaegu-Regular SDF.asset')",
+      "Bash(sed -i 's|m_AtlasPopulationMode: 0|m_AtlasPopulationMode: 1|g' '/c/Users/wnghd/github/sketch-rush/Sketch Rush/Assets/Fonts/Gaegu-Regular SDF.asset')",
+      "Bash(sed -i 's|m_SourceFontFile: {fileID: 0}|m_SourceFontFile: {fileID: 12800000, guid: ae168db307709854782ba66b222e1c5d, type: 3}|g' '/c/Users/wnghd/github/sketch-rush/Sketch Rush/Assets/Fonts/Gaegu-Bold SDF.asset')",
+      "Bash(sed -i 's|m_SourceFontFileGUID: $|m_SourceFontFileGUID: ae168db307709854782ba66b222e1c5d|g' '/c/Users/wnghd/github/sketch-rush/Sketch Rush/Assets/Fonts/Gaegu-Bold SDF.asset')"
     ]
   }
 }
