@@ -73,11 +73,13 @@ public class LobbyUI : MonoBehaviourPunCallbacks
         networkManager = FindAnyObjectByType<NetworkManager>();
 
         GameEventSystem.Subscribe("OnPlayerReadyChanged", OnPlayerReadyChanged);
+        GameEventSystem.Subscribe("OnJoinRoomFailed", OnJoinRoomFailed);
     }
 
     private void OnDestroy()
     {
         GameEventSystem.Unsubscribe("OnPlayerReadyChanged", OnPlayerReadyChanged);
+        GameEventSystem.Unsubscribe("OnJoinRoomFailed", OnJoinRoomFailed);
     }
 
 void Start()
@@ -220,6 +222,8 @@ private void OnCreateRoom()
 
     private void OnLeaveRoom()
     {
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayRoomExit();
         networkManager.LeaveRoom();
     }
 
@@ -265,6 +269,12 @@ public override void OnJoinedRoom()
     {
         UpdatePlayerList();
         UpdateStartButton();
+    }
+
+    private void OnJoinRoomFailed(object data)
+    {
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayPasswordWrong();
     }
 
 

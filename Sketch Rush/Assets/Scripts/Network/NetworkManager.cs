@@ -100,6 +100,12 @@ public void CreateRoom(string roomName, int drawTime = 5)
         CreateRoom(null);
     }
 
+    public override void OnJoinRoomFailed(short returnCode, string message)
+    {
+        Debug.LogWarning($"[NetworkManager] Join room failed: {message}");
+        GameEventSystem.Publish("OnJoinRoomFailed", message);
+    }
+
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
         Debug.LogError($"[NetworkManager] Create room failed: {message}");

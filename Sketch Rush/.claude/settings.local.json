@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp:*)",
+      "mcp__unityMCP__find_gameobjects",
+      "mcp__unityMCP__manage_components",
+      "mcp__unityMCP__manage_scene",
+      "mcp__unityMCP__create_script",
+      "mcp__unityMCP__read_console"
+    ]
+  }
+}

@@ -24,6 +24,8 @@ public class SoundManager : MonoBehaviour
     [SerializeField] private AudioClip tickTock;
     [SerializeField] private AudioClip drawing;
     [SerializeField] private AudioClip nextDrawing;
+    [SerializeField] private AudioClip roomExit;
+    [SerializeField] private AudioClip passwordWrong;
 
     [Header("Settings")]
     [SerializeField] private float bgmVolume = 0.5f;
@@ -31,7 +33,7 @@ public class SoundManager : MonoBehaviour
 
     void Awake()
     {
-        // ½Ì±ÛÅæ ÆÐÅÏ
+        // ï¿½Ì±ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (Instance == null)
         {
             Instance = this;
@@ -43,7 +45,7 @@ public class SoundManager : MonoBehaviour
             return;
         }
 
-        // AudioSource ÃÊ±âÈ­
+        // AudioSource ï¿½Ê±ï¿½È­
         if (bgmSource != null)
         {
             bgmSource.loop = true;
@@ -88,7 +90,7 @@ public class SoundManager : MonoBehaviour
         if (bgmSource == null || clip == null) return;
 
         if (bgmSource.clip == clip && bgmSource.isPlaying)
-            return; // ÀÌ¹Ì Àç»ý Áß
+            return; // ï¿½Ì¹ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½
 
         bgmSource.clip = clip;
         bgmSource.Play();
@@ -172,6 +174,16 @@ public class SoundManager : MonoBehaviour
     public void PlayNextDrawingWord()
     {
         PlaySFX(nextDrawing);
+    }
+
+    public void PlayRoomExit()
+    {
+        PlaySFX(roomExit);
+    }
+
+    public void PlayPasswordWrong()
+    {
+        PlaySFX(passwordWrong);
     }
 
     private void PlaySFX(AudioClip clip)
